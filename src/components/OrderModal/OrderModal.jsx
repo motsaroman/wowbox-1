@@ -47,10 +47,6 @@ export default function OrderModal({
     floor: "",
     courierComment: "",
     paymentMethod: "sbp",
-    cardNumber: "",
-    cardExpiry: "",
-    cardCvv: "",
-    saveCard: false,
     promoCode: "",
     acceptTerms: false,
     receiveNews: false,
@@ -58,6 +54,7 @@ export default function OrderModal({
 
   const [promoApplied, setPromoApplied] = useState(false);
   const [isMapOpen, setIsMapOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const boxPrice = 4900;
   const deliveryPrice = 99;
@@ -127,7 +124,7 @@ export default function OrderModal({
     setIsMapOpen(false);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.acceptTerms) {
@@ -137,9 +134,92 @@ export default function OrderModal({
       return;
     }
 
-    console.log("Order data:", formData);
-    if (onPayment) {
-      onPayment(formData.paymentMethod);
+    setIsProcessing(true);
+
+    try {
+      const personalizationData = {
+        theme: boxPersonalization?.theme || "techno",
+        gender: boxPersonalization?.gender || "не указан",
+        recipient: boxPersonalization?.recipient || "не указан",
+        restrictions: boxPersonalization?.restrictions || "нет",
+        wishes: boxPersonalization?.additionalWishes || "нет",
+        boxPrice: totalPrice,
+      };
+
+      const payload = {
+        boxTheme: personalizationData.theme,
+        promoCode: formData.promoCode,
+        paymentMethod: formData.paymentMethod,
+        contactData: {
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+        },
+        recipientData: formData.isGift
+          ? {
+              name: formData.recipientName,
+              phone: formData.recipientPhone,
+            }
+          : null,
+
+        comments: {
+          user: formData.comment,
+          courier: formData.courierComment,
+          personalization: personalizationData,
+        },
+        deliveryData: {
+          type: formData.deliveryType,
+          pointId: formData.deliveryType === "5post" ? formData.pvzCode : null,
+          pointName:
+            formData.deliveryType === "5post" ? formData.deliveryPoint : null,
+          address:
+            formData.deliveryType === "courier"
+              ? `${formData.city}, ${formData.deliveryAddress}, кв. ${formData.apartment}`
+              : null,
+          details:
+            formData.deliveryType === "courier"
+              ? {
+                  city: formData.city,
+                  street: formData.deliveryAddress,
+                  flat: formData.apartment,
+                  floor: formData.floor,
+                  entrance: formData.entrance,
+                }
+              : { city: formData.city },
+        },
+        utm: {
+          source:
+            new URLSearchParams(window.location.search).get("utm_source") ||
+            "direct",
+          medium: new URLSearchParams(window.location.search).get("utm_medium"),
+          campaign: new URLSearchParams(window.location.search).get(
+            "utm_campaign"
+          ),
+        },
+      };
+
+      const response = await fetch("/api/create-payment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Ошибка сервера");
+      }
+
+      if (data.confirmationUrl) {
+        window.location.href = data.confirmationUrl;
+      }
+    } catch (error) {
+      console.error("Ошибка заказа:", error);
+      alert(error.message);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -575,59 +655,6 @@ export default function OrderModal({
                 </div>
               </label>
             </div>
-
-            {formData.paymentMethod === "card" && (
-              <div className={styles.cardForm}>
-                <div className={styles.inputGroup}>
-                  <input
-                    type="text"
-                    name="cardNumber"
-                    value={formData.cardNumber}
-                    onChange={handleInputChange}
-                    placeholder="Номер карты"
-                    className={styles.input}
-                    maxLength="19"
-                  />
-                </div>
-
-                <div className={styles.cardGrid}>
-                  <div className={styles.inputGroup}>
-                    <input
-                      type="text"
-                      name="cardExpiry"
-                      value={formData.cardExpiry}
-                      onChange={handleInputChange}
-                      placeholder="MM/ГГ"
-                      className={styles.input}
-                      maxLength="5"
-                    />
-                  </div>
-                  <div className={styles.inputGroup}>
-                    <input
-                      type="text"
-                      name="cardCvv"
-                      value={formData.cardCvv}
-                      onChange={handleInputChange}
-                      placeholder="CVV / CVC"
-                      className={styles.input}
-                      maxLength="3"
-                    />
-                  </div>
-                </div>
-
-                <label className={styles.checkboxLabel2}>
-                  <input
-                    type="checkbox"
-                    name="saveCard"
-                    checked={formData.saveCard}
-                    onChange={handleInputChange}
-                  />
-                  <span className={styles.checkmark}></span>
-                  <span className={styles.agreementText}>Сохранить карту</span>
-                </label>
-              </div>
-            )}
-
             <p className={styles.paymentNote}>
               Перенаправим вас на страницу СБП, где вы сможете выбрать банк для
               оплаты. Это безопасно и надежно.
@@ -797,8 +824,16 @@ export default function OrderModal({
 
             <div className={styles.finalPrice}>{totalPrice}₽</div>
 
-            <button type="submit" className={styles.submitButton}>
-              Оплатить
+            <button
+              type="submit"
+              className={styles.submitButton}
+              disabled={isProcessing}
+              style={{
+                opacity: isProcessing ? 0.7 : 1,
+                cursor: isProcessing ? "wait" : "pointer",
+              }}
+            >
+              {isProcessing ? "Обработка..." : "Оплатить"}
             </button>
           </div>
         </div>
