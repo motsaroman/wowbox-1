@@ -1,3 +1,4 @@
+// src\components\TelegramChat\TelegramChat.jsx
 import tgIcon from "../../assets/images/telegramChatIcon.webp";
 import tgChat from "../../assets/images/telegramChatsms.webp";
 

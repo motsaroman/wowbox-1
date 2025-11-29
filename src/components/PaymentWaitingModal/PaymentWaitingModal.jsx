@@ -1,3 +1,4 @@
+// src\components\PaymentWaitingModal\PaymentWaitingModal.jsx
 import styles from "./PaymentWaitingModal.module.css";
 
 const PaymentWaitingModal = ({ isOpen, onClose }) => {

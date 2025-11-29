@@ -1,3 +1,4 @@
+// src\components\DeliveryModal\DeliveryModal.jsx
 import styles from "./DeliveryModal.module.css";
 import santaImage from "../../assets/images/santa-with-gifts.webp";
 

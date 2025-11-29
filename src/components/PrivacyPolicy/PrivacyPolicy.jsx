@@ -1,3 +1,4 @@
+// src\components\PrivacyPolicy\PrivacyPolicy.jsx
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./PrivacyPolicy.module.css";

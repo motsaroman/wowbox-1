@@ -1,3 +1,4 @@
+// src\components\PromoPopup\PromoPopup.jsx
 import React, { useState, useEffect } from "react";
 import closeIcon from "../../assets/icons/close.svg";
 import copy from "../../assets/icons/copy.svg";
