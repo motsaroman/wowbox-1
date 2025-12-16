@@ -1,4 +1,3 @@
-// src\components\SmsModal\SmsModal.jsx
 import { useState } from "react";
 import styles from "./SmsModal.module.css";
 import { useEffect } from "react";

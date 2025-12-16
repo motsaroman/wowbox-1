@@ -1,76 +1,30 @@
 <!DOCTYPE html>
-<html lang="ru">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WOWBOX</title>
+<html lang="en">
 
-    <!-- ===================== Яндекс.Метрика ===================== -->
-    <script type="text/javascript">
-      (function (m, e, t, r, i, k, a) {
-        m[i] =
-          m[i] ||
-          function () {
-            (m[i].a = m[i].a || []).push(arguments);
-          };
-        m[i].l = 1 * new Date();
-        for (var j = 0; j < document.scripts.length; j++) {
-          if (document.scripts[j].src === r) {
-            return;
-          }
-        }
-        k = e.createElement(t);
-        a = e.getElementsByTagName(t)[0];
-        k.async = 1;
-        k.src = r;
-        a.parentNode.insertBefore(k, a);
-      })(
-        window,
-        document,
-        "script",
-        "https://mc.yandex.ru/metrika/tag.js?id=105562569",
-        "ym"
-      );
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WOWbox — сервис персональных подарков</title>
+  <meta name="description" content="Не знаете что подарить? Делегируйте выбор умному сервису подарков. 
+Подбор за 30 секунд. От 4 900₽ Доставка по России" />
+  <script defer src="https://cdn2.embedgames.app/wix/embed_scripts/ep.js?token=00590862-565e-4b71-844c-0300fbb6eda6"></script>
+</head>
 
-      ym(105562569, "init", {
-        ssr: true,
-        webvisor: true,
-        clickmap: true,
-        ecommerce: "dataLayer",
-        accurateTrackBounce: true,
-        trackLinks: true,
-      });
-    </script>
-    <!-- ======================== Google Tag ======================== -->
-    <script
-      async
-      src="https://www.googletagmanager.com/gtag/js?id=G-ELD28P3KR1"
-    ></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
-      }
-      gtag("js", new Date());
-      gtag("config", "G-ELD28P3KR1");
-    </script>
-    <!-- =========================================================== -->
-  </head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+  <script>
+    var _rcct = "621d6305a3f3ca5c59e7f3d15ffd745d44209fdabb8e61e48e41c80a166ab533";
+    !function (t) {
+      var a = t.getElementsByTagName("head")[0];
+      var c = t.createElement("script");
+      c.type = "text/javascript";
+      c.src = "//c.retailcrm.tech/widget/loader.js";
+      a.appendChild(c);
+    }(document);
+  </script>
 
-  <body>
-    <!-- noscript Метрики должен быть в body -->
-    <noscript>
-      <div>
-        <img
-          src="https://mc.yandex.ru/watch/105562569"
-          style="position: absolute; left: -9999px"
-          alt=""
-        />
-      </div>
-    </noscript>
+</body>
 
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
 </html>

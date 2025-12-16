@@ -1,74 +1,104 @@
-// src\components\OrderModal\OrderModal.jsx
-import { useState, useEffect } from "react";
-import styles from "./OrderModal.module.css";
+import { useEffect, useState, useRef } from "react";
+import { useOrderStore } from "../../store/orderStore";
+import { useBoxStore } from "../../store/boxStore";
 import DeliveryMapPage from "../DeliveryMapPage/DeliveryMapPage";
+import ContactForm from "./components/ContactForm";
+import RecipientForm from "./components/RecipientForm";
+import DeliverySection from "./components/DeliverySection";
+import PaymentSection from "./components/PaymentSection";
+import OrderSummary from "./components/OrderSummary";
+import DeliveryModal from "../DeliveryModal/DeliveryModal";
 
-import OrderSuccessModal from "../OrderSuccessModal/OrderSuccessModal";
-
-// Icons and images
 import editIcon from "../../assets/icons/edit.svg";
-import rightArrow from "../../assets/icons/right-arrow.svg";
 import texno1 from "../../assets/images/texno1.webp";
-import texno2 from "../../assets/images/texno2.webp";
-import texno3 from "../../assets/images/texno3.webp";
-import texno4 from "../../assets/images/texno4.webp";
-import fivePostLogo from "../../assets/images/5post-logo.png";
-import truckIcon from "../../assets/icons/truck.svg";
-import spbBankLogo from "../../assets/images/spb-bank-logo.png";
-import sberPayLogo from "../../assets/images/sber-pay-bank-logo.png";
-import tBankLogo from "../../assets/images/t-bank-logo.png";
-import bankCardIcon from "../../assets/icons/bank-card.svg";
+import texno2 from "../../assets/images/texno4.webp";
+import texno3 from "../../assets/images/texno2.webp";
+import texno4 from "../../assets/images/texno3.webp";
+import styles from "./OrderModal.module.css";
+
+// --- ХЕЛПЕРЫ ДЛЯ КОНВЕРТАЦИИ ID КВИЗА В НАЗВАНИЯ ---
+const getQuizAnswerTitle = (questionIndex, answerId) => {
+  if (!answerId) return "Не указан";
+
+  if (questionIndex === 0) {
+    const map = {
+      self: "Для себя",
+      partner: "Для партнёра",
+      friend: "Для друга",
+      colleague: "Для коллеги",
+      relative: "Для родственника",
+    };
+    return map[answerId] || "Не указан";
+  }
+
+  if (questionIndex === 1) {
+    const map = { woman: "Женщина", man: "Мужчина", other: "Не важно" };
+    return map[answerId] || "Не указан";
+  }
+
+  if (questionIndex === 2) {
+    const map = {
+      practical: "Гаджеты и техно",
+      emotions: "Уют и комфорт",
+      quality: "Веселье и игры",
+      surprise: "Сладости и вкусняшки",
+    };
+    return map[answerId] || "Не указан";
+  }
+
+  if (questionIndex === 3) {
+    const map = {
+      standard: "Чтобы точно пригодилось",
+      premium: "Чтобы удивило и запомнилось",
+      luxury: "Чтобы выглядело дорого",
+      any: "Чтобы было разнообразно",
+    };
+    return map[answerId] || "Не указан";
+  }
+
+  return answerId;
+};
+// ----------------------------------------------------
 
 export default function OrderModal({
-  isOpen = true,
-  onClose,
-  selectedBox,
-  boxPersonalization,
   onPayment,
-  onEdit,
   onOpenPrivacyPolicy,
   onOpenPublicOffer,
 }) {
-  const [formData, setFormData] = useState({
-    name: "",
-    phone: "+7 ",
-    email: "",
-    telegramNotify: false,
-    telegramUsername: "",
-    isGift: false,
-    recipientName: "",
-    recipientPhone: "+7 ",
-    comment: "",
-    deliveryType: "5post",
-    pvzCode: "",
-    city: "Москва",
-    cityFias: null,
-    deliveryPoint: "",
-    deliveryAddress: "",
-    apartment: "",
-    entrance: "",
-    floor: "",
-    courierComment: "",
-    paymentMethod: "sbp",
-    promoCode: "",
-    acceptTerms: false,
-    receiveNews: false,
-  });
+  const {
+    resetForm,
+    validateForm,
+    formData,
+    setProcessing,
+    isProcessing,
+    updateDelivery,
+    deliveryPrice,
+    boxPrice,
+    promoApplied,
+  } = useOrderStore();
 
-  const [promoApplied, setPromoApplied] = useState(false);
+  const {
+    isOrderModalOpen,
+    closeOrderModal,
+    editOrder,
+    selectedTheme,
+    personalizationData,
+  } = useBoxStore();
+
   const [isMapOpen, setIsMapOpen] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false); // Состояние загрузки
 
-  // Цены теперь в стейте, чтобы могли меняться
-  const [deliveryPrice, setDeliveryPrice] = useState(99);
-  const boxPrice = 4900;
-  const promoDiscount = promoApplied ? 500 : 0;
-  const totalPrice = boxPrice + deliveryPrice - promoDiscount;
+  // Состояние видимости модального окна
+  const [isDeliveryWarningOpen, setIsDeliveryWarningOpen] = useState(false);
 
-  const [isSuccessOpen, setIsSuccessOpen] = useState(false);
+  // ИСПОЛЬЗУЕМ REF для мгновенного хранения статуса согласия
+  // Это предотвратит повторное открытие даже при быстрых кликах
+  const hasAcceptedRef = useRef(false);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOrderModalOpen) {
+      resetForm();
+      // Сбрасываем реф при открытии нового заказа
+      hasAcceptedRef.current = false;
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
@@ -76,209 +106,207 @@ export default function OrderModal({
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [isOpen]);
+  }, [isOrderModalOpen, resetForm]);
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
+  // --- ЕДИНАЯ ФУНКЦИЯ ОПЛАТЫ ---
+  const processOrderPayment = async () => {
+    // Если уже идет обработка - выходим, чтобы не дублировать запросы
+    if (isProcessing) return;
 
-  const handlePhoneChange = (e, fieldName) => {
-    let value = e.target.value;
-    if (!value.startsWith("+7 ")) {
-      value = "+7 ";
-    }
-    setFormData((prev) => ({ ...prev, [fieldName]: value }));
-  };
+    setProcessing(true);
 
-  const handlePromoApply = () => {
-    if (formData.promoCode.toUpperCase() === "ПЕРВЫЙ500") {
-      setPromoApplied(true);
-    }
-  };
+    try {
+      const promoDiscount = promoApplied ? 500 : 0;
+      const totalPrice = boxPrice + deliveryPrice - promoDiscount;
 
-  const handleOpenMap = () => {
-    setIsMapOpen(true);
-  };
+      const fullPersonalData = {
+        theme: personalizationData?.theme || selectedTheme,
+        recipient: personalizationData?.recipient || "Не указан",
+        gender: personalizationData?.gender || "not-important",
+        restrictions: personalizationData?.restrictions || "Нет",
+        wishes: personalizationData?.additionalWishes || "Нет",
+        quizAnswers: personalizationData?.quiz || {},
+      };
 
-  const handleCloseMap = () => {
-    setIsMapOpen(false);
-  };
+      const q = fullPersonalData.quizAnswers;
 
-  const handleDeliverySelect = (deliveryData) => {
-    // 1. САМОВЫВОЗ (5Post)
-    if (deliveryData.mode === "pickup" && deliveryData.point) {
-      setFormData((prev) => ({
-        ...prev,
-        deliveryType: "5post",
-        deliveryPoint: `${deliveryData.point.address} (${deliveryData.point.name})`,
-        pvzCode: deliveryData.point.id,
-        cityFias: deliveryData.cityFias,
-      }));
+      let genderValue = fullPersonalData.gender;
+      if (genderValue === "female") genderValue = "Женский";
+      else if (genderValue === "male") genderValue = "Мужской";
+      else if (genderValue === "not-important") genderValue = "Не важно";
 
-      // Считаем цену: База из города + 50 руб
-      if (deliveryData.point.price) {
-        setDeliveryPrice(deliveryData.point.price + 50);
+      const recipientComment = formData.isGift
+        ? `${formData.recipientName} (${formData.recipientPhone})`
+        : "Заказчик";
+
+      const managerCommentParts = [
+        `--- Персонализация ---`,
+        `Тема бокса: ${getThemeDisplayName(fullPersonalData.theme)}`,
+        `Получатель: ${fullPersonalData.recipient}`,
+        `Пол: ${genderValue}`,
+        `Ограничения: ${fullPersonalData.restrictions}`,
+        `Пожелания: ${fullPersonalData.wishes}`,
+        `--- Ответы Квиза ---`,
+        `Q0 (Для кого): ${getQuizAnswerTitle(0, q[0])}`,
+        `Q1 (Пол): ${getQuizAnswerTitle(1, q[1])}`,
+        `Q2 (Стиль): ${getQuizAnswerTitle(2, q[2])}`,
+        `Q3 (Важность): ${getQuizAnswerTitle(3, q[3])}`,
+        `--- Промокод ---`,
+        `Промокод: ${formData.promoCode || "Нет"}`,
+        `Скидка: ${promoDiscount}₽`,
+        `--- Получатель ---`,
+        `Получатель: ${recipientComment}`,
+        formData.telegramNotify && formData.telegramUsername
+          ? `Telegram: @${formData.telegramUsername.replace("@", "")}`
+          : null,
+          formData.courierComment ? `Комментарий для курьера: ${formData.courierComment}` : null,
+        `--- Доставка ---`,
+        `Пользователь уведомлен о задержке и согласился на презент.`,
+      ];
+
+      const managerCommentString = managerCommentParts.join("\n");
+
+      // --- ИСПРАВЛЕНИЕ: Формирование адреса для API ---
+      let finalAddress = null;
+
+      if (formData.deliveryType === "courier") {
+        // Логика для курьера (сборка строки)
+        const parts = [
+          formData.city,
+          formData.deliveryAddress,
+          formData.apartment ? `кв. ${formData.apartment}` : "",
+          formData.entrance ? `под. ${formData.entrance}` : "",
+          formData.floor ? `эт. ${formData.floor}` : "",
+        ];
+        finalAddress = parts.filter(Boolean).join(", ");
+      } else if (formData.deliveryType === "5post") {
+        // Логика для 5Post: достаем адрес из строки "Адрес (Название точки)"
+        // В store/orderStore мы сохраняем строку как `${data.point.address} (${data.point.name})`
+        // Нам нужно вытащить часть ДО первой открывающей скобки " ("
+        finalAddress = formData.deliveryPoint
+          ? formData.deliveryPoint.split(" (")[0]
+          : null;
       }
-    }
-    // 2. КУРЬЕР
-    else if (deliveryData.mode === "courier") {
-      setFormData((prev) => ({
-        ...prev,
-        deliveryType: "courier",
-        deliveryAddress: deliveryData.address,
-        apartment: deliveryData.apartment || prev.apartment,
-        entrance: deliveryData.entrance || prev.entrance,
-        floor: deliveryData.floor || prev.floor,
-        courierComment: deliveryData.comment || prev.courierComment,
-        cityFias: deliveryData.cityFias,
-        city: deliveryData.cityName || prev.city,
-      }));
+      // ------------------------------------------------
 
-      // Считаем цену: База из города + 180 руб
-      if (deliveryData.price) {
-        setDeliveryPrice(deliveryData.price + 180);
+      const payload = {
+        boxTheme: fullPersonalData.theme,
+        promoCode: formData.promoCode,
+        promoDiscountAmount: promoDiscount,
+        paymentMethod: formData.paymentMethod,
+        contactData: {
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+          telegram: formData.telegramNotify ? formData.telegramUsername : null
+        },
+        recipientData: formData.isGift
+          ? {
+              name: formData.recipientName,
+              phone: formData.recipientPhone,
+            }
+          : null,
+        comments: {
+          user: formData.comment,
+          courier: formData.courierComment,
+          personalization: fullPersonalData,
+          managerComment: managerCommentString,
+        },
+        deliveryData: {
+          type: formData.deliveryType,
+          pointId: formData.pvzCode,
+          pointName: formData.deliveryPoint
+            ? formData.deliveryPoint.split(" (")[1]?.replace(")", "")
+            : null,
+          address: finalAddress, // <--- Теперь здесь правильный адрес для обоих типов доставки
+          details: {
+            city: formData.city,
+            cityFias: formData.cityFias,
+            street: formData.deliveryAddress,
+            flat: formData.apartment,
+            floor: formData.floor,
+            entrance: formData.entrance,
+          },
+        },
+        clientPrices: {
+          box: boxPrice,
+          delivery: deliveryPrice,
+          total: totalPrice,
+          discount: promoDiscount,
+        },
+        utm: {
+          source:
+            new URLSearchParams(window.location.search).get("utm_source") ||
+            "direct",
+          medium: new URLSearchParams(window.location.search).get("utm_medium"),
+          campaign: new URLSearchParams(window.location.search).get(
+            "utm_campaign"
+          ),
+        },
+      };
+
+      const response = await fetch(
+        "https://wowbox.market/api/create-payment.php",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok && data.confirmationUrl) {
+        // Успех
+        window.location.href = data.confirmationUrl;
+
+        onPayment(formData.paymentMethod);
+        closeOrderModal();
       } else {
-        setDeliveryPrice(350 + 180);
+        alert("Ошибка: " + (data.message || "Попробуйте позже"));
       }
+    } catch (error) {
+      console.error(error);
+      alert("Ошибка сети. Проверьте соединение.");
+    } finally {
+      // Сбрасываем флаг только если не ушли на редирект (в случае ошибки)
+      // Если редирект произошел, компоненту все равно
+      setProcessing(false);
     }
-    setIsMapOpen(false);
   };
 
-  // временный, т.к юкасса еще не одобрила
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // --- ОБРАБОТЧИК САБМИТА ФОРМЫ (КНОПКА ОПЛАТИТЬ) ---
+  const handleFormSubmit = (e) => {
+    // Если событие есть, предотвращаем перезагрузку
+    if (e) e.preventDefault();
 
-    if (!formData.acceptTerms) {
-      alert("Пожалуйста, согласитесь с условиями публичной оферты и конфиденциальности");
+    // Блокируем, если уже идет процесс
+    if (isProcessing) return;
+
+    if (!validateForm()) {
+      console.log("Ошибка валидации формы");
       return;
     }
 
-    setIsSuccessOpen(true);
+    // Проверяем через REF - это значение всегда актуально
+    if (hasAcceptedRef.current) {
+      processOrderPayment();
+    } else {
+      setIsDeliveryWarningOpen(true);
+    }
   };
 
+  // --- ОБРАБОТЧИК КНОПКИ "ПОЛУЧИТЬ ПРЕЗЕНТ И ОПЛАТИТЬ" ---
+  const handleDeliveryAccept = () => {
+    // 1. Мгновенно обновляем реф
+    hasAcceptedRef.current = true;
 
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
+    // 2. Закрываем модалку
+    setIsDeliveryWarningOpen(false);
 
-  //   if (!formData.acceptTerms) {
-  //     alert(
-  //       "Пожалуйста, согласитесь с условиями публичной оферты и конфиденциальности"
-  //     );
-  //     return;
-  //   }
-
-  //   setIsProcessing(true);
-
-  //   try {
-  //     const personalizationData = {
-  //       theme: boxPersonalization?.theme || "techno",
-  //       gender: boxPersonalization?.gender || "не указан",
-  //       recipient: boxPersonalization?.recipient || "не указан",
-  //       restrictions: boxPersonalization?.restrictions || "нет",
-  //       wishes: boxPersonalization?.additionalWishes || "нет",
-  //     };
-
-  //     let fullCourierAddress = null;
-  //     if (formData.deliveryType === "courier") {
-  //       const parts = [
-  //         formData.city,
-  //         formData.deliveryAddress,
-  //         formData.apartment ? `кв. ${formData.apartment}` : "",
-  //         formData.entrance ? `под. ${formData.entrance}` : "",
-  //         formData.floor ? `эт. ${formData.floor}` : "",
-  //       ];
-
-  //       fullCourierAddress = parts.filter(Boolean).join(", ");
-  //     }
-
-  //     const payload = {
-  //       boxTheme: personalizationData.theme,
-  //       promoCode: formData.promoCode,
-  //       paymentMethod: formData.paymentMethod,
-
-  //       contactData: {
-  //         name: formData.name,
-  //         phone: formData.phone,
-  //         email: formData.email,
-  //       },
-
-  //       recipientData: formData.isGift
-  //         ? {
-  //             name: formData.recipientName,
-  //             phone: formData.recipientPhone,
-  //           }
-  //         : null,
-
-  //       comments: {
-  //         user: formData.comment,
-  //         courier: formData.courierComment,
-  //         personalization: personalizationData,
-  //       },
-
-  //       deliveryData: {
-  //         type: formData.deliveryType,
-
-  //         pointId: formData.deliveryType === "5post" ? formData.pvzCode : null,
-  //         pointName:
-  //           formData.deliveryType === "5post" ? formData.deliveryPoint : null,
-
-  //         address: fullCourierAddress,
-
-  //         details: {
-  //           city: formData.city,
-  //           cityFias: formData.cityFias,
-  //           street: formData.deliveryAddress,
-  //           flat: formData.apartment,
-  //           floor: formData.floor,
-  //           entrance: formData.entrance,
-  //         },
-  //       },
-  //       clientPrices: {
-  //         box: boxPrice,
-  //         delivery: deliveryPrice,
-  //         total: totalPrice,
-  //       },
-
-  //       // UTM метки
-  //       utm: {
-  //         source:
-  //           new URLSearchParams(window.location.search).get("utm_source") ||
-  //           "direct",
-  //         medium: new URLSearchParams(window.location.search).get("utm_medium"),
-  //         campaign: new URLSearchParams(window.location.search).get(
-  //           "utm_campaign"
-  //         ),
-  //       },
-  //     };
-
-  //     const response = await fetch("/api/create-payment", {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify(payload),
-  //     });
-
-  //     const data = await response.json();
-
-  //     if (response.ok && data.confirmationUrl) {
-  //       window.location.href = data.confirmationUrl;
-  //     } else {
-  //       alert(
-  //         "Ошибка при создании заказа: " + (data.message || "Попробуйте позже")
-  //       );
-  //     }
-  //   } catch (error) {
-  //     console.error("Error:", error);
-  //     alert("Произошла ошибка сети. Попробуйте еще раз.");
-  //   } finally {
-  //     setIsProcessing(false);
-  //   }
-  // };
+    // 3. Запускаем оплату
+    processOrderPayment();
+  };
 
   const getThemeDisplayName = (theme) => {
     const themeMap = {
@@ -288,15 +316,6 @@ export default function OrderModal({
       sweet: "СЛАДКИЙ",
     };
     return themeMap[theme] || theme?.toUpperCase() || "ТЕХНО";
-  };
-
-  const getGenderDisplayName = (gender) => {
-    const genderMap = {
-      female: "Женский",
-      male: "Мужской",
-      "not-important": "Не важно",
-    };
-    return genderMap[gender] || "Не указано";
   };
 
   const getThemeLogo = (theme) => {
@@ -309,415 +328,91 @@ export default function OrderModal({
     return logoMap[theme] || texno1;
   };
 
-  if (!isOpen) return null;
+  const getGenderDisplayName = (gender) =>
+    ({
+      female: "Женский",
+      male: "Мужской",
+      "not-important": "Не важно",
+    }[gender] || "Не указано");
+
+  const getPersonalizationDetails = () => {
+    if (!personalizationData) return [];
+
+    const details = [];
+    const quiz = personalizationData.quiz || {};
+
+    const recipientValue =
+      personalizationData.recipient?.trim() || "Не указано";
+    details.push({
+      key: "recipient",
+      label: "Для кого",
+      value: recipientValue,
+    });
+
+    const genderValue = getGenderDisplayName(personalizationData.gender);
+    details.push({ key: "gender", label: "Пол", value: genderValue });
+
+    if (quiz["0"]) {
+      details.push({
+        key: "quiz_q0",
+        label: "Q0(Для кого)",
+        value: getQuizAnswerTitle(0, quiz["0"]),
+      });
+    }
+
+    if (quiz["1"]) {
+      details.push({
+        key: "quiz_q1",
+        label: "Q1(Пол)",
+        value: getQuizAnswerTitle(1, quiz["1"]),
+      });
+    }
+
+    if (quiz["2"]) {
+      details.push({
+        key: "stylePreference",
+        label: "Стиль",
+        value: getQuizAnswerTitle(2, quiz["2"]),
+      });
+    }
+
+    if (quiz["3"]) {
+      details.push({
+        key: "importance",
+        label: "Важность",
+        value: getQuizAnswerTitle(3, quiz["3"]),
+      });
+    }
+
+    details.push({
+      key: "restrictions",
+      label: "Ограничения",
+      value: personalizationData.restrictions || "Нет",
+    });
+
+    const wishesValue = personalizationData.additionalWishes?.trim() || "Нет";
+    details.push({ key: "wishes", label: "Пожелания", value: wishesValue });
+
+    return details;
+  };
+
+  if (!isOrderModalOpen) return null;
 
   return (
     <div className={styles.pageContainer}>
       <div className={styles.header}>
         <h2 className={styles.title}>Оформление заказа</h2>
-        <button className={styles.closeButton} onClick={onClose}>
+        <button className={styles.closeButton} onClick={closeOrderModal}>
           ✕
         </button>
       </div>
 
-      <form className={styles.form} onSubmit={handleSubmit}>
+      <form className={styles.form} onSubmit={handleFormSubmit} noValidate>
         <div className={styles.leftColumn}>
-          <section className={styles.section}>
-            <h3 className={styles.sectionTitle}>Контактные данные</h3>
-
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>
-                Имя<span className={styles.required}>*</span>
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="Введите имя..."
-                className={styles.input}
-                required
-              />
-            </div>
-
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>
-                Телефон<span className={styles.required}>*</span>
-              </label>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={(e) => handlePhoneChange(e, "phone")}
-                placeholder="+7 (000) 000-00-00"
-                className={styles.input}
-                required
-              />
-            </div>
-
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>
-                Email<span className={styles.required}>*</span>
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="Введите свою почту"
-                className={styles.input}
-                required
-              />
-            </div>
-
-            <div className={styles.checkboxRow}>
-              <span className={styles.checkboxText}>
-                Хочу получать информацию о заказе в Telegram
-              </span>
-              <label className={styles.toggle}>
-                <input
-                  type="checkbox"
-                  name="telegramNotify"
-                  checked={formData.telegramNotify}
-                  onChange={handleInputChange}
-                />
-                <span className={styles.toggleSlider}></span>
-              </label>
-            </div>
-
-            {formData.telegramNotify && (
-              <div className={styles.inputGroup}>
-                <div className={styles.telegramInput}>
-                  <span className={styles.telegramPrefix}>@</span>
-                  <input
-                    type="text"
-                    name="telegramUsername"
-                    value={formData.telegramUsername}
-                    onChange={handleInputChange}
-                    placeholder="username"
-                    className={styles.input}
-                  />
-                </div>
-              </div>
-            )}
-          </section>
-
-          <section className={styles.section}>
-            <div className={styles.checkboxRow}>
-              <span className={styles.checkboxText}>
-                Получатель другой человек
-              </span>
-              <label className={styles.toggle}>
-                <input
-                  type="checkbox"
-                  name="isGift"
-                  checked={formData.isGift}
-                  onChange={handleInputChange}
-                />
-                <span className={styles.toggleSlider}></span>
-              </label>
-            </div>
-
-            {formData.isGift && (
-              <>
-                <div className={styles.inputGroup}>
-                  <label className={styles.label}>
-                    Имя получателя<span className={styles.required}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="recipientName"
-                    value={formData.recipientName}
-                    onChange={handleInputChange}
-                    placeholder="Введите имя..."
-                    className={styles.input}
-                  />
-                </div>
-
-                <div className={styles.inputGroup}>
-                  <label className={styles.label}>
-                    Телефон получателя
-                    <span className={styles.required}>*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    name="recipientPhone"
-                    value={formData.recipientPhone}
-                    onChange={(e) => handlePhoneChange(e, "recipientPhone")}
-                    placeholder="+7 (000) 000-00-00"
-                    className={styles.input}
-                  />
-                </div>
-              </>
-            )}
-          </section>
-
-          <section className={styles.section}>
-            <div className={styles.inputGroup}>
-              <label className={styles.label}>Комментарий к заказу</label>
-              <input
-                type="text"
-                name="comment"
-                value={formData.comment}
-                onChange={handleInputChange}
-                placeholder="Добавьте комментарий..."
-                className={styles.input}
-              />
-            </div>
-          </section>
-
-          <section className={styles.section}>
-            <h3 className={styles.sectionTitle}>Доставка</h3>
-
-            <div className={styles.deliveryOptions}>
-              <label
-                className={`${styles.deliveryOption} ${formData.deliveryType === "5post" ? styles.active : ""
-                  }`}
-              >
-                <input
-                  type="radio"
-                  name="deliveryType"
-                  value="5post"
-                  checked={formData.deliveryType === "5post"}
-                  onChange={handleInputChange}
-                />
-                <div className={styles.deliveryContent}>
-                  <img
-                    src={fivePostLogo}
-                    alt="5post"
-                    className={styles.deliveryLogo}
-                    loading="lazy"
-                  />
-                  <span>ПВЗ 5POST</span>
-                </div>
-              </label>
-
-              <label
-                className={`${styles.deliveryOption} ${formData.deliveryType === "courier" ? styles.active : ""
-                  }`}
-              >
-                <input
-                  type="radio"
-                  name="deliveryType"
-                  value="courier"
-                  checked={formData.deliveryType === "courier"}
-                  onChange={handleInputChange}
-                />
-                <div className={styles.deliveryContent}>
-                  <img
-                    src={truckIcon}
-                    alt="Курьер"
-                    className={styles.deliveryIcon}
-                    loading="lazy"
-                  />
-                  <span>Курьером до адреса</span>
-                </div>
-              </label>
-            </div>
-
-            {/*<div className={styles.inputGroup}>
-              <label className={styles.label}>
-                Город<span className={styles.required}>*</span>
-              </label>
-              <input
-                type="text"
-                name="city"
-                value={formData.city}
-                onChange={handleInputChange}
-                className={styles.input}
-                required
-              />
-            </div>*/}
-
-            {formData.deliveryType === "5post" ? (
-              <div className={styles.inputGroup}>
-                <p className={styles.label}>
-                  Пункт выдачи<span className={styles.required}>*</span>
-                </p>
-
-                <div className={styles.select} onClick={handleOpenMap}>
-                  <p
-                    style={{
-                      cursor: "pointer",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {formData.deliveryPoint || "Выберите пункт выдачи..."}
-                  </p>
-                  <img src={rightArrow} alt="" />
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className={styles.inputGroup}>
-                  <label className={styles.label}>
-                    Адрес доставки<span className={styles.required}>*</span>
-                  </label>
-                  <div className={styles.input} onClick={handleOpenMap}>
-                    <input
-                      type="text"
-                      name="deliveryAddress"
-                      value={formData.deliveryAddress}
-                      onChange={handleInputChange}
-                      placeholder="Введите адрес..."
-                      className={styles.inputItem}
-                      required
-                    />
-                    <img src={rightArrow} alt="" />
-                  </div>
-                </div>
-
-                <div className={styles.addressGrid}>
-                  <div className={styles.inputGroup}>
-                    <input
-                      type="text"
-                      name="apartment"
-                      value={formData.apartment}
-                      onChange={handleInputChange}
-                      placeholder="Квартира"
-                      className={styles.input}
-                    />
-                  </div>
-                  <div className={styles.inputGroup}>
-                    <input
-                      type="text"
-                      name="entrance"
-                      value={formData.entrance}
-                      onChange={handleInputChange}
-                      placeholder="Подъезд"
-                      className={styles.input}
-                    />
-                  </div>
-                  <div className={styles.inputGroup}>
-                    <input
-                      type="text"
-                      name="floor"
-                      value={formData.floor}
-                      onChange={handleInputChange}
-                      placeholder="Этаж"
-                      className={styles.input}
-                    />
-                  </div>
-                </div>
-
-                <div className={styles.inputGroup}>
-                  <input
-                    type="text"
-                    name="courierComment"
-                    value={formData.courierComment}
-                    onChange={handleInputChange}
-                    placeholder="Комментарий для курьера"
-                    className={styles.input}
-                  />
-                </div>
-              </>
-            )}
-
-            <p className={styles.deliveryNote}>
-              ПРИ ПОВТОРНОМ ЗАКАЗЕ СЕГОДНЯ ДО 23:59 НА ТОТ ЖЕ АДРЕС — ДОСТАВКА
-              БЕСПЛАТНАЯ!
-            </p>
-          </section>
-
-          <section className={styles.section}>
-            <h3 className={styles.sectionTitle}>Оплата</h3>
-
-            <div className={styles.paymentOptions}>
-              <label
-                className={`${styles.paymentOption} ${formData.paymentMethod === "sbp" ? styles.active : ""
-                  }`}
-              >
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="sbp"
-                  checked={formData.paymentMethod === "sbp"}
-                  onChange={handleInputChange}
-                />
-                <div className={styles.paymentContent}>
-                  <img
-                    src={spbBankLogo}
-                    alt="СБП"
-                    className={styles.paymentLogo}
-                    loading="lazy"
-                  />
-                  <span>СБП</span>
-                </div>
-              </label>
-
-              <label
-                className={`${styles.paymentOption} ${formData.paymentMethod === "sberpay" ? styles.active : ""
-                  }`}
-              >
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="sberpay"
-                  checked={formData.paymentMethod === "sberpay"}
-                  onChange={handleInputChange}
-                />
-                <div className={styles.paymentContent}>
-                  <img
-                    src={sberPayLogo}
-                    alt="SberPay"
-                    className={styles.paymentLogo}
-                    loading="lazy"
-                  />
-                  <span>SberPay</span>
-                </div>
-              </label>
-
-              <label
-                className={`${styles.paymentOption} ${formData.paymentMethod === "tpay" ? styles.active : ""
-                  }`}
-              >
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="tpay"
-                  checked={formData.paymentMethod === "tpay"}
-                  onChange={handleInputChange}
-                />
-                <div className={styles.paymentContent}>
-                  <img
-                    src={tBankLogo}
-                    alt="T-Pay"
-                    className={styles.paymentLogo}
-                    loading="lazy"
-                  />
-                  <span>T-Pay</span>
-                </div>
-              </label>
-
-              <label
-                className={`${styles.paymentOption} ${formData.paymentMethod === "card" ? styles.active : ""
-                  }`}
-              >
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="card"
-                  checked={formData.paymentMethod === "card"}
-                  onChange={handleInputChange}
-                />
-                <div className={styles.paymentContent}>
-                  <img
-                    src={bankCardIcon}
-                    alt="Банковская карта"
-                    className={styles.paymentIcon}
-                    loading="lazy"
-                  />
-                  <span>Банковская карта</span>
-                </div>
-              </label>
-            </div>
-            <p className={styles.paymentNote}>
-              Перенаправим вас на страницу СБП, где вы сможете выбрать банк для
-              оплаты. Это безопасно и надежно.
-            </p>
-          </section>
+          <ContactForm />
+          <RecipientForm />
+          <DeliverySection onOpenMap={() => setIsMapOpen(true)} />
+          <PaymentSection />
         </div>
 
         <div className={styles.rightColumn}>
@@ -726,185 +421,61 @@ export default function OrderModal({
               <button
                 type="button"
                 className={styles.editButton}
+                onClick={editOrder}
                 title="Редактировать"
-                onClick={onEdit}
               >
-                <img src={editIcon} alt="Edit" loading="lazy" />
+                <img src={editIcon} alt="Edit" />
               </button>
+
               <div className={styles.boxImageWrapper}>
                 <div className={styles.boxImage}>
                   <img
-                    src={
-                      boxPersonalization
-                        ? getThemeLogo(boxPersonalization.theme)
-                        : texno1
-                    }
-                    alt={
-                      boxPersonalization
-                        ? getThemeDisplayName(boxPersonalization.theme)
-                        : "Техно бокс"
-                    }
+                    src={getThemeLogo(
+                      personalizationData?.theme || selectedTheme
+                    )}
+                    alt="box"
                     className={styles.boxLogo}
-                    loading="lazy"
                   />
                 </div>
                 <div className={styles.boxInfo}>
                   <h4 className={styles.boxTitle}>
-                    {boxPersonalization
-                      ? getThemeDisplayName(boxPersonalization.theme)
-                      : "ТЕХНО"}
+                    {getThemeDisplayName(
+                      personalizationData?.theme || selectedTheme
+                    )}
                   </h4>
                   <div className={styles.boxDetails}>
-                    <p>
-                      Для кого:{" "}
-                      <span>
-                        {boxPersonalization?.recipient || "Не указано"}
-                      </span>
-                    </p>
-                    <p>
-                      Пол:{" "}
-                      <span>
-                        {boxPersonalization
-                          ? getGenderDisplayName(boxPersonalization.gender)
-                          : "Не указано"}
-                      </span>
-                    </p>
-                    <p>
-                      Ограничения:{" "}
-                      <span>{boxPersonalization?.restrictions || "Нет"}</span>
-                    </p>
-                    <p>
-                      Пожелания:{" "}
-                      <span>
-                        {boxPersonalization?.additionalWishes || "Нет"}
-                      </span>
-                    </p>
+                    {getPersonalizationDetails().map((detail) => (
+                      <p key={detail.key}>
+                        {detail.label}: <span>{detail.value}</span>
+                      </p>
+                    ))}
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className={styles.rightColumnBottomContent}>
-            <div className={styles.promoSection}>
-              <div className={styles.promoInput}>
-                <input
-                  type="text"
-                  name="promoCode"
-                  value={formData.promoCode}
-                  onChange={handleInputChange}
-                  placeholder="Промокод"
-                  className={styles.input}
-                />
-                <button
-                  type="button"
-                  onClick={handlePromoApply}
-                  className={styles.promoButton}
-                  disabled={promoApplied}
-                >
-                  <img src={rightArrow} alt="Apply" loading="lazy" />
-                </button>
-              </div>
-            </div>
-
-            <div className={styles.priceDetails}>
-              <h4 className={styles.priceTitle}>Детали цены</h4>
-              <div className={styles.priceRow}>
-                <span>Бокс</span>
-                <span>{boxPrice}₽</span>
-              </div>
-              <div className={styles.priceRow}>
-                <span>Доставка</span>
-                <span>{deliveryPrice}₽</span>
-              </div>
-              {promoApplied && (
-                <div className={`${styles.priceRow} ${styles.discount}`}>
-                  <span>Скидка</span>
-                  <span>-{promoDiscount}₽</span>
-                </div>
-              )}
-              <div className={styles.priceLine}></div>
-              <div className={`${styles.priceRow} ${styles.total}`}>
-                <span>Итого</span>
-                <span>{totalPrice}₽</span>
-              </div>
-            </div>
-
-            <div className={styles.agreements}>
-              <label className={styles.checkboxLabel2}>
-                <input
-                  type="checkbox"
-                  name="acceptTerms"
-                  checked={formData.acceptTerms}
-                  onChange={handleInputChange}
-                  required
-                />
-                <span className={styles.checkmark}></span>
-                <span className={styles.agreementText}>
-                  Согласен с{" "}
-                  <a
-                    href="#"
-                    className={styles.link}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (onOpenPublicOffer) onOpenPublicOffer();
-                    }}
-                  >
-                    публичной оферты
-                  </a>{" "}
-                  и{" "}
-                  <a
-                    href="#"
-                    className={styles.link}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (onOpenPrivacyPolicy) onOpenPrivacyPolicy();
-                    }}
-                  >
-                    конфиденциальности
-                  </a>
-                </span>
-              </label>
-
-              <label className={styles.checkboxLabel2}>
-                <input
-                  type="checkbox"
-                  name="receiveNews"
-                  checked={formData.receiveNews}
-                  onChange={handleInputChange}
-                />
-                <span className={styles.checkmark}></span>
-                <span className={styles.agreementText}>
-                  Хочу получать новости и спецпредложения
-                </span>
-              </label>
-            </div>
-
-            <div className={styles.finalPrice}>{totalPrice}₽</div>
-
-            <button
-              type="submit"
-              className={styles.submitButton}
-              disabled={isProcessing}
-              style={{
-                opacity: isProcessing ? 0.7 : 1,
-                cursor: isProcessing ? "wait" : "pointer",
-              }}
-            >
-              {isProcessing ? "Обработка..." : "Оплатить"}
-            </button>
-          </div>
+          <OrderSummary
+            // ВАЖНО: передаем пустую функцию, чтобы кнопка в OrderSummary
+            // просто сабмитила форму, а не вызывала логику дважды (через onClick и onSubmit)
+            onSubmit={() => {}}
+            onOpenPrivacy={onOpenPrivacyPolicy}
+            onOpenOffer={onOpenPublicOffer}
+          />
         </div>
       </form>
+
       {isMapOpen && (
         <DeliveryMapPage
           isOpen={isMapOpen}
-          onClose={handleCloseMap}
-          onDeliverySelect={handleDeliverySelect}
+          onClose={() => setIsMapOpen(false)}
+          onDeliverySelect={updateDelivery}
           initialMode={
             formData.deliveryType === "courier" ? "courier" : "pickup"
           }
           currentData={{
+            email: formData.email,
+            phone: formData.phone,
             address: formData.deliveryAddress,
             apartment: formData.apartment,
             entrance: formData.entrance,
@@ -913,9 +484,11 @@ export default function OrderModal({
           }}
         />
       )}
-      <OrderSuccessModal
-        isOpen={isSuccessOpen}
-        onClose={() => setIsSuccessOpen(false)}
+
+      <DeliveryModal
+        isOpen={isDeliveryWarningOpen}
+        onClose={() => setIsDeliveryWarningOpen(false)}
+        onAccept={handleDeliveryAccept}
       />
     </div>
   );

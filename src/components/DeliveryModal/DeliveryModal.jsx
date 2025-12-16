@@ -1,4 +1,3 @@
-// src\components\DeliveryModal\DeliveryModal.jsx
 import styles from "./DeliveryModal.module.css";
 import santaImage from "../../assets/images/santa-with-gifts.webp";
 
@@ -39,7 +38,7 @@ const DeliveryModal = ({ isOpen, onClose, onAccept }) => {
             <button className={styles.declineButton} onClick={onClose}>
               Отказаться
             </button>
-            <button className={styles.acceptButton} onClick={onAccept}>
+            <button type="button" className={styles.acceptButton} onClick={onAccept}>
               Получить презент и оплатить
             </button>
           </div>

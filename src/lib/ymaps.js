@@ -1,4 +1,3 @@
-// src\lib\ymaps.js
 import React from 'react';
 import ReactDOM from 'react-dom';
 
@@ -22,9 +21,10 @@ const loadYmapsScript = () => {
 await loadYmapsScript();
 
 // 1. Импортируем сам API, Reactify и Clusterer
-const [ymaps3React, ymaps3Clusterer] = await Promise.all([
+const [ymaps3React, ymaps3Clusterer, ymaps3Controls] = await Promise.all([
   ymaps3.import('@yandex/ymaps3-reactify'),
   ymaps3.import('@yandex/ymaps3-clusterer@0.0.1'),
+  ymaps3.import('@yandex/ymaps3-controls@0.0.1'),
   ymaps3.ready
 ]);
 
@@ -37,10 +37,17 @@ export const {
   YMapMarker,
   YMapFeatureDataSource,
   YMapLayer,
-  YMapListener
+  YMapListener,
+  YMapFeature,
+  YMapControls
 } = reactify.module(ymaps3);
 
 export const {
   YMapClusterer,
   clusterByGrid
 } = reactify.module(ymaps3Clusterer);
+
+export const {
+  YMapZoomControl,
+  YMapGeolocationControl
+} = reactify.module(ymaps3Controls);

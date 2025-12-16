@@ -1,4 +1,3 @@
-// src/components/OrderSuccessModal/OrderSuccessModal.jsx
 import styles from "./OrderSuccessModal.module.css";
 
 export default function OrderSuccessModal({ isOpen, onClose }) {

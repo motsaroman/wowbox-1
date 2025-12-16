@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useBoxStore } from "../../store/boxStore";
 
 import texno1 from "../../assets/images/texno1.webp";
 import texno2 from "../../assets/images/texno2.webp";
@@ -20,55 +21,106 @@ import toRight from "../../assets/icons/toRight.svg";
 
 import styles from "./BoxingPersonalization.module.css";
 
-const BoxPersonalization = ({
-  isOpen,
-  onClose,
-  onOrderClick,
-  savedData,
-  startStep = 1,
-}) => {
-  const [currentStep, setCurrentStep] = useState(1);
-
-  // сбрасываем шаг при каждом открытии модалки
-  useEffect(() => {
-    if (isOpen) {
-      setCurrentStep(startStep || 1);
-    }
-  }, [isOpen, startStep]);
+const BoxPersonalization = () => {
+  // Получаем состояние и методы из глобального стора
+  const isOpen = useBoxStore((state) => state.isPersonalizationOpen);
+  const onClose = useBoxStore((state) => state.closePersonalization);
+  const savePersonalization = useBoxStore((state) => state.savePersonalization);
+  const globalSelectedTheme = useBoxStore((state) => state.selectedTheme);
+  const savedData = useBoxStore((state) => state.personalizationData);
   
-  const [selectedTheme, setSelectedTheme] = useState(
-    savedData?.theme || "techno"
+  // Получаем флаг пропуска
+  const skipInitialSteps = useBoxStore(
+    (state) => state.skipInitialPersonalizationSteps
   );
+  const setSkipInitialPersonalization = useBoxStore(
+    (state) => state.setSkipInitialPersonalization
+  ); 
+  // quizAnswers больше не нужен здесь, так как данные уже в savedData
+  // const quizAnswers = useBoxStore((state) => state.quizAnswers); 
+
+  // Локальное состояние формы (пока пользователь не нажмет "Сохранить")
+  const [currentStep, setCurrentStep] = useState(1);
+  const [selectedTheme, setSelectedTheme] = useState(
+    globalSelectedTheme || "techno"
+  );
+
   const [formData, setFormData] = useState({
-    recipient: savedData?.recipient || "",
-    gender: savedData?.gender || "",
+    recipient: "",
+    gender: "",
     restrictions: [],
-    additionalWishes:
-      savedData?.additionalWishes === "Нет"
-        ? ""
-        : savedData?.additionalWishes || "",
-  });
-  const [checkboxes, setCheckboxes] = useState({
-    noParfume: savedData?.restrictions?.includes("Без ароматов") || false,
-    noCosmetics: savedData?.restrictions?.includes("Без косметики") || false,
-    noCandy: savedData?.restrictions?.includes("Без сладкого") || false,
+    additionalWishes: "",
   });
 
-  const restrictions = [
-    { id: "no-scents", label: "Без ароматов (свечи, парфюм)", icon: "🕯️" },
-    { id: "no-cosmetics", label: "Без косметики", icon: "💄" },
-    { id: "no-sweets", label: "Без сладкого", icon: "🍭" },
-  ];
+  const [checkboxes, setCheckboxes] = useState({
+    noParfume: false,
+    noCosmetics: false,
+    noCandy: false,
+  });
+
+  // Синхронизация при открытии модального окна
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // --- 1. ИНИЦИАЛИЗАЦИЯ ДАННЫХ ---
+    setSelectedTheme(globalSelectedTheme || "techno");
+
+    let startStep = 1; 
+    let newFormData = {
+      recipient: "",
+      gender: "",
+      restrictions: [],
+      additionalWishes: "",
+    };
+    let newCheckboxes = { noParfume: false, noCosmetics: false, noCandy: false };
+
+    // 2. ЛОГИКА ПРОПУСКА ИЗ КВИЗА: ПРИОРИТЕТ
+    if (skipInitialSteps) {
+      startStep = 3; // <-- Начинаем строго с шага 3
+      setSkipInitialPersonalization(false); // Сбрасываем флаг
+
+      // Данные уже предзаполнены в savedData методом applyRecommendation
+      if (savedData) {
+          newFormData.recipient = savedData.recipient || "Для себя"; 
+          newFormData.gender = savedData.gender || "not-important";
+          newFormData.additionalWishes = savedData.additionalWishes === "Нет" ? "" : savedData.additionalWishes;
+      }
+      
+    } else if (savedData) {
+      // 3. ЛОГИКА ВОССТАНОВЛЕНИЯ (Редактирование или обычный повторный вход)
+      startStep = currentStep; // Сохраняем текущий шаг (если редактируем)
+      
+      newFormData.recipient = savedData.recipient || "";
+      newFormData.gender = savedData.gender || "";
+      newFormData.additionalWishes = savedData.additionalWishes === "Нет" ? "" : savedData.additionalWishes;
+      
+      const restrictionsStr = savedData.restrictions || "";
+      newCheckboxes = {
+        noParfume: restrictionsStr.includes("Без ароматов"),
+        noCosmetics: restrictionsStr.includes("Без косметики"),
+        noCandy: restrictionsStr.includes("Без сладкого"),
+      };
+    } else {
+        // 4. Полный сброс для обычного старта с Шага 1
+        newFormData = { recipient: "", gender: "", restrictions: [], additionalWishes: "" };
+        newCheckboxes = { noParfume: false, noCosmetics: false, noCandy: false };
+    } 
+
+    // 5. Установка финального состояния
+    setCurrentStep(startStep);
+    setFormData(newFormData);
+    setCheckboxes(newCheckboxes);
+    
+  }, [isOpen, globalSelectedTheme, savedData, skipInitialSteps, setSkipInitialPersonalization]);
+
 
   const handleNext = () => {
+    // Добавлена проверка, чтобы нельзя было перейти без выбора пола
+    if (currentStep === 2 && !formData.gender) return; 
+    
     if (currentStep < 4) {
       setCurrentStep(currentStep + 1);
     }
-  };
-
-  const handleRecipientSelect = (recipient) => {
-    setFormData({ ...formData, recipient });
-    handleNext();
   };
 
   const handleBack = () => {
@@ -77,9 +129,10 @@ const BoxPersonalization = ({
     }
   };
 
-  // const handleRecipientSelect = (value) => {
-  //   setFormData({ ...formData, recipient: value });
-  // };
+  const handleRecipientSelect = (recipient) => {
+    setFormData({ ...formData, recipient });
+    handleNext();
+  };
 
   const handleGenderSelect = (value) => {
     setFormData({ ...formData, gender: value });
@@ -88,15 +141,6 @@ const BoxPersonalization = ({
   const handleThemeSelect = (theme) => {
     setSelectedTheme(theme);
   };
-
-  // const handleRestrictionToggle = (id) => {
-  //   setFormData((prev) => ({
-  //     ...prev,
-  //     restrictions: prev.restrictions.includes(id)
-  //       ? prev.restrictions.filter((r) => r !== id)
-  //       : [...prev.restrictions, id],
-  //   }));
-  // };
 
   const toggleCheckbox = (key) => {
     setCheckboxes((prev) => ({
@@ -111,31 +155,28 @@ const BoxPersonalization = ({
     if (checkboxes.noCosmetics) restrictions.push("Без косметики");
     if (checkboxes.noCandy) restrictions.push("Без сладкого");
 
+    // Используем текущее состояние formData, которое было предзаполнено или заполнено вручную.
     const personalizationData = {
       theme: selectedTheme,
-      recipient: formData.recipient,
-      gender: formData.gender,
+      recipient: formData.recipient || "Не указано",
+      gender: formData.gender || "not-important",
       restrictions: restrictions.join(", ") || "Нет",
       additionalWishes: formData.additionalWishes || "Нет",
     };
 
-    console.log("Данные персонализации:", personalizationData);
-    if (onOrderClick) {
-      onOrderClick(personalizationData);
-    }
+    // Сохраняем в глобальный стор и переходим к заказу
+    savePersonalization(personalizationData);
   };
 
   const handleSkip = () => {
-    console.log("Персонализация пропущена");
-    if (onOrderClick) {
-      onOrderClick();
-    }
-  };
-
-  const handleClose = () => {
-    if (onClose) {
-      onClose();
-    }
+    // При полном пропуске (с шага 1) сохраняем только тему и дефолты
+    savePersonalization({ 
+        theme: selectedTheme,
+        recipient: "Для себя", 
+        gender: "not-important", 
+        restrictions: "Нет",
+        additionalWishes: "Нет",
+    });
   };
 
   if (!isOpen) return null;
@@ -143,7 +184,7 @@ const BoxPersonalization = ({
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
-        <button className={styles.closeButton} onClick={handleClose}>
+        <button className={styles.closeButton} onClick={onClose}>
           ✕
         </button>
 
@@ -152,8 +193,9 @@ const BoxPersonalization = ({
 
           <div className={styles.themesRow}>
             <div
-              className={`${styles.themeCard} ${selectedTheme === "techno" ? styles.themeCardActive : ""
-                }`}
+              className={`${styles.themeCard} ${
+                selectedTheme === "techno" ? styles.themeCardActive : ""
+              }`}
               onClick={() => handleThemeSelect("techno")}
             >
               <img
@@ -165,44 +207,49 @@ const BoxPersonalization = ({
               <div className={styles.themeLabel}>ТЕХНО</div>
             </div>
             <div
-              className={`${styles.themeCard} ${selectedTheme === "cozy" ? styles.themeCardActive : ""
-                }`}
-              onClick={() => handleThemeSelect("cozy")}
-            >
-              <img
-                src={texno2}
-                className={styles.themeIcon}
-                alt="Theme 2"
-                loading="lazy"
-              />
-              <div className={styles.themeLabel}>УЮТНЫЙ</div>
-            </div>{" "}
-            <div
-              className={`${styles.themeCard} ${selectedTheme === "party" ? styles.themeCardActive : ""
-                }`}
+              className={`${styles.themeCard} ${
+                selectedTheme === "party" ? styles.themeCardActive : ""
+              }`}
               onClick={() => handleThemeSelect("party")}
             >
               <img
-                src={texno3}
+                src={texno2}
                 className={styles.themeIcon}
                 alt="Theme 3"
                 loading="lazy"
               />
               <div className={styles.themeLabel}>ПАТИ</div>
-            </div>{" "}
+            </div>
             <div
-              className={`${styles.themeCard} ${selectedTheme === "sweet" ? styles.themeCardActive : ""
-                }`}
+              className={`${styles.themeCard} ${
+                selectedTheme === "sweet" ? styles.themeCardActive : ""
+              }`}
               onClick={() => handleThemeSelect("sweet")}
             >
               <img
-                src={texno4}
+                src={texno3}
                 className={styles.themeIcon}
                 alt="Theme 4"
                 loading="lazy"
               />
               <div className={styles.themeLabel}>СЛАДКИЙ</div>
             </div>
+            <div
+              className={`${styles.themeCard} ${
+                selectedTheme === "cozy" ? styles.themeCardActive : ""
+              }`}
+              onClick={() => handleThemeSelect("cozy")}
+            >
+              <img
+                src={texno4}
+                className={styles.themeIcon}
+                alt="Theme 2"
+                loading="lazy"
+              />
+              <div className={styles.themeLabel}>УЮТНЫЙ</div>
+            </div>
+
+            
           </div>
         </div>
 
@@ -213,8 +260,11 @@ const BoxPersonalization = ({
             <>
               <h2 className={styles.question}>Для кого подарок?</h2>
               <div className={styles.optionsList}>
+                {/* Если поле уже заполнено ответом из квиза, выделяем его */}
                 <button
-                  className={styles.optionButton}
+                  className={`${styles.optionButton} ${
+                    formData.recipient === "Для себя" ? styles.optionButtonActive : ""
+                  }`}
                   onClick={() => handleRecipientSelect("Для себя")}
                 >
                   <span className={styles.optionIcon}>
@@ -227,7 +277,9 @@ const BoxPersonalization = ({
                   <span className={styles.optionText}>Для себя</span>
                 </button>
                 <button
-                  className={styles.optionButton}
+                  className={`${styles.optionButton} ${
+                    formData.recipient === "Для другого человека" ? styles.optionButtonActive : ""
+                  }`}
                   onClick={() => handleRecipientSelect("Для другого человека")}
                 >
                   <span className={styles.optionIcon}>
@@ -249,10 +301,11 @@ const BoxPersonalization = ({
               <h2 className={styles.question}>Пол получателя</h2>
               <div className={styles.optionsList}>
                 <button
-                  className={`${styles.optionButton} ${formData.gender === "female"
-                    ? styles.optionButtonActive
-                    : ""
-                    }`}
+                  className={`${styles.optionButton} ${
+                    formData.gender === "female"
+                      ? styles.optionButtonActive
+                      : ""
+                  }`}
                   onClick={() => handleGenderSelect("female")}
                 >
                   <span className={styles.optionIcon}>
@@ -261,8 +314,9 @@ const BoxPersonalization = ({
                   <span className={styles.optionText}>Женщина</span>
                 </button>
                 <button
-                  className={`${styles.optionButton} ${formData.gender === "male" ? styles.optionButtonActive : ""
-                    }`}
+                  className={`${styles.optionButton} ${
+                    formData.gender === "male" ? styles.optionButtonActive : ""
+                  }`}
                   onClick={() => handleGenderSelect("male")}
                 >
                   <span className={styles.optionIcon}>
@@ -271,10 +325,11 @@ const BoxPersonalization = ({
                   <span className={styles.optionText}>Мужчина</span>
                 </button>
                 <button
-                  className={`${styles.optionButton} ${formData.gender === "not-important"
-                    ? styles.optionButtonActive
-                    : ""
-                    }`}
+                  className={`${styles.optionButton} ${
+                    formData.gender === "not-important"
+                      ? styles.optionButtonActive
+                      : ""
+                  }`}
                   onClick={() => handleGenderSelect("not-important")}
                 >
                   <span className={styles.optionIcon}>
@@ -291,8 +346,9 @@ const BoxPersonalization = ({
               <h2 className={styles.question}>Есть ли ограничения?</h2>
               <div className={styles.optionsList}>
                 <button
-                  className={`${styles.optionButton} ${checkboxes.noParfume ? styles.optionButtonChecked : ""
-                    }`}
+                  className={`${styles.optionButton} ${
+                    checkboxes.noParfume ? styles.optionButtonChecked : ""
+                  }`}
                   onClick={() => toggleCheckbox("noParfume")}
                 >
                   <span className={styles.optionIcon}>
@@ -302,15 +358,17 @@ const BoxPersonalization = ({
                     Без ароматов (свечи, парфюм)
                   </span>
                   <span
-                    className={`${styles.checkmark} ${checkboxes.noParfume ? styles.checked : ""
-                      }`}
+                    className={`${styles.checkmark} ${
+                      checkboxes.noParfume ? styles.checked : ""
+                    }`}
                   >
                     ✓
                   </span>
                 </button>
                 <button
-                  className={`${styles.optionButton} ${checkboxes.noCosmetics ? styles.optionButtonChecked : ""
-                    }`}
+                  className={`${styles.optionButton} ${
+                    checkboxes.noCosmetics ? styles.optionButtonChecked : ""
+                  }`}
                   onClick={() => toggleCheckbox("noCosmetics")}
                 >
                   <span className={styles.optionIcon}>
@@ -318,15 +376,17 @@ const BoxPersonalization = ({
                   </span>
                   <span className={styles.optionText}>Без косметики</span>
                   <span
-                    className={`${styles.checkmark} ${checkboxes.noCosmetics ? styles.checked : ""
-                      }`}
+                    className={`${styles.checkmark} ${
+                      checkboxes.noCosmetics ? styles.checked : ""
+                    }`}
                   >
                     ✓
                   </span>
                 </button>
                 <button
-                  className={`${styles.optionButton} ${checkboxes.noCandy ? styles.optionButtonChecked : ""
-                    }`}
+                  className={`${styles.optionButton} ${
+                    checkboxes.noCandy ? styles.optionButtonChecked : ""
+                  }`}
                   onClick={() => toggleCheckbox("noCandy")}
                 >
                   <span className={styles.optionIcon}>
@@ -334,8 +394,9 @@ const BoxPersonalization = ({
                   </span>
                   <span className={styles.optionText}>Без сладкого</span>
                   <span
-                    className={`${styles.checkmark} ${checkboxes.noCandy ? styles.checked : ""
-                      }`}
+                    className={`${styles.checkmark} ${
+                      checkboxes.noCandy ? styles.checked : ""
+                    }`}
                   >
                     ✓
                   </span>
@@ -390,7 +451,11 @@ const BoxPersonalization = ({
                 />
                 <span>Назад</span>
               </button>
-              <button className={styles.nextButton} onClick={handleNext}>
+              <button 
+                  className={styles.nextButton} 
+                  onClick={handleNext}
+                  disabled={currentStep === 2 && !formData.gender}
+              >
                 Далее
               </button>
             </>

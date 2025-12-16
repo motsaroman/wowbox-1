@@ -1,4 +1,3 @@
-// src\components\PaymentResultModal\PaymentResultModal.jsx
 import { useState } from "react";
 
 import success1 from "../../assets/icons/successIcon1.svg";

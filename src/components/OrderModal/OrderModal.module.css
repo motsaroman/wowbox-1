@@ -16,7 +16,7 @@
   left: 0;
   right: 0;
   background: #f9f9f9;
-  padding: 3.2rem 6rem;
+  padding: 2rem 6rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -80,7 +80,7 @@
   padding: 2rem;
   border-radius: 1.6rem;
   position: sticky;
-  top: 2rem;
+  top: 0rem;
   align-self: flex-start;
 }
 
@@ -682,7 +682,11 @@
   color: rgba(51, 51, 51, 1);
   margin-bottom: 0;
 }
-
+.freeShippingMsg {
+  font-size: 14px;
+  font-family: "SF Pro", sans-serif;
+  color: #28a745;
+}
 .priceRow.total span:last-child {
   font-family: "SF Pro";
   font-weight: 760;
@@ -697,10 +701,11 @@
 
 .checkboxLabel2 {
   display: flex;
-  align-items: flex-start;
+  /*align-items: flex-start;*/
   gap: 1rem;
   cursor: pointer;
   position: relative;
+  align-items: center;
 }
 
 .checkboxLabel2 input[type="checkbox"] {
@@ -788,6 +793,50 @@
   transform: translateY(0);
 }
 
+.inputError {
+  border: 1px solid #ff4444 !important;
+  background-color: #fff0f0 !important;
+}
+
+/* Текст ошибки под полем */
+.errorMessage {
+  color: #ff4444;
+  font-family: "SF Pro", sans-serif;
+  font-size: 14px;
+  margin-top: 4px;
+  margin-left: 4px;
+}
+
+/* --- СТАТУСЫ ПРОМОКОДА --- */
+
+.inputSuccess {
+  border: 1px solid #00c853 !important;
+  background-color: #f0fff4 !important;
+  color: #00c853;
+}
+
+.promoMessageSuccess {
+  color: #00c853;
+  font-size: 12px;
+  margin-top: 4px;
+  margin-left: 4px;
+}
+
+.promoMessageError {
+  color: #ff4444;
+  font-size: 14px;
+  margin-top: 4px;
+  margin-left: 4px;
+  font-family: "SF Pro", sans-serif;
+}
+
+
+.promoButtonDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
 /* АДАПТАЦИЯ: 1280px - плавное уменьшение для больших планшетов */
 @media (max-width: 1280px) {
   .pageContainer {
@@ -799,7 +848,7 @@
   }
 
   .title {
-    padding: 3.2rem 4rem;
+    padding: 2rem 4rem;
   }
 
   .form {
@@ -820,7 +869,7 @@
   }
 
   .title {
-    padding: 3.2rem 3rem;
+    padding: 1rem 3rem;
   }
 
   .form {
@@ -860,7 +909,7 @@
   }
 
   .title {
-    padding: 3.2rem 2.4rem;
+    padding: 1rem 2.4rem;
   }
 
   .form {
@@ -978,7 +1027,7 @@
   }
 
   .title {
-    padding: 2.4rem 1.6rem;
+    padding: 1rem 1.6rem;
     font-size: 1.4rem;
   }
 
