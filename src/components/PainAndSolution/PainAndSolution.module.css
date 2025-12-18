@@ -358,8 +358,8 @@
   .cloud4 {
     position: static;
     width: 100%;
-    width: 268px;
-    height: 170px;
+    width: 26.8rem;
+    height: 17rem;
     align-items: center;
     background-size: cover;
     padding: 0;
@@ -388,8 +388,13 @@
   }
   .cloud1,
   .cloud2,
-  .cloud3,
+  .cloud3 {
+    width: 31.5rem;
+    height: 18.9rem;
+  }
+
   .cloud4 {
     width: 31.5rem;
+    height: 22.2rem;
   }
 }

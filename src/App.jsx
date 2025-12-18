@@ -140,7 +140,7 @@ export default function App() {
               </div>
 
               {/* Секция Квиза */}
-              <div className={styles.weFoundYourSuperWowbox}>
+              <div id="quiz" className={styles.weFoundYourSuperWowbox}>
                 <div className={styles.quizContainer}>
                   <h2>
                     Найдём ваш идеальный

@@ -50,14 +50,9 @@ export default function PainAndSolution() {
             а потом увидишь вежливую улыбку "спасибо, как раз нужно было"?
           </p>
           {/*кнопка должна вести на квиз. ID квиза нет*/}
-          <button
-            className={styles.buttonSolution}
-            onClick={() => {
-              console.warn('Quiz link is not defined yet');
-            }}
-          >
+          <a href="#quiz" className={styles.buttonSolution}>
             <span>Хватит угадывать — подарите то, что хотят</span>
-          </button>
+          </a>
         </div>
       </div>
       <div className={styles.bottomContainer}>
