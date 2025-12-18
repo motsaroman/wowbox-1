@@ -16,11 +16,15 @@
   margin-bottom: 4rem;
 }
 
+.videoWrapper {
+  display: flex;
+  justify-content: center;
+}
+
 .video {
   max-width: 61.2rem;
   height: auto;
   border-radius: 2.4rem;
-  background-color: aqua;
 }
 
 .textPain {
@@ -306,6 +310,8 @@
     max-width: none;
     width: 100%;
     height: auto;
+    display: block;
+    padding: 1.6rem;
   }
 
   .descPain {
@@ -373,5 +379,17 @@
   .cloud2,
   .cloud4 {
     align-self: flex-end;
+  }
+}
+
+@media (max-width: 414px) {
+  .bottomContainer {
+    min-height: 1020px;
+  }
+  .cloud1,
+  .cloud2,
+  .cloud3,
+  .cloud4 {
+    width: 31.5rem;
   }
 }
