@@ -395,4 +395,19 @@
   .cloud4 {
     align-self: flex-end;
   }
+
+  .cloudTitle {
+    font-size: 1.5rem;
+  }
+
+  .descBlack,
+  .descRed {
+    font-size: 1.2rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .descBlack::before {
+    width: 0.6rem;
+    height: 0.6rem;
+  }
 }
