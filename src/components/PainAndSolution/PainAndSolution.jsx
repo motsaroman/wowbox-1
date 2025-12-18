@@ -49,12 +49,13 @@ export default function PainAndSolution() {
             Или потратишь 3 часа на поиски подарка, купишь что-то "нормальное",
             а потом увидишь вежливую улыбку "спасибо, как раз нужно было"?
           </p>
-          {/*кнопка должна вести на квиз. ID квиза нет*/}
+
           <a href="#quiz" className={styles.buttonSolution}>
             <span>Хватит угадывать — подарите то, что хотят</span>
           </a>
         </div>
       </div>
+      *
       <div className={styles.bottomContainer}>
         <div className={styles.cloudsWrapper}>
           {cloudsData.map((cloud) => (
