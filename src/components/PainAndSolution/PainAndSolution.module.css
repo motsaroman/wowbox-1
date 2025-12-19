@@ -16,15 +16,25 @@
   margin-bottom: 4rem;
 }
 
+.videoOuter {
+  width: 100%;
+  padding: 0 1.6rem;
+}
+
 .videoWrapper {
-  display: flex;
-  justify-content: center;
+  width: 100%;
+  max-width: 61.2rem;
+  aspect-ratio: 16 / 9;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 2.4rem;
 }
 
 .video {
-  max-width: 61.2rem;
-  height: auto;
-  border-radius: 2.4rem;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .textPain {
@@ -95,6 +105,7 @@
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  text-align: center;
 }
 
 .buttonSolution::before {
@@ -278,6 +289,7 @@
     padding: 6rem;
   }
 
+  .videoWrapper,
   .video {
     width: 52rem;
   }
@@ -298,10 +310,11 @@
 
 @media only screen and (max-width: 640px) {
   .topContainer {
+    max-width: none; /* 🔥 КЛЮЧ */
     width: 100%;
-    justify-content: center;
     flex-direction: column;
-    padding: 1.4rem;
+    align-items: stretch; /* 🔥 КЛЮЧ */
+    padding: 0;
   }
 
   .solutionMan {
@@ -309,17 +322,14 @@
   }
 
   .videoWrapper {
-    width: 100vw;
-    margin-left: calc(-50vw + 50%);
-    height: auto;
+    max-width: none;
+    width: 100%;
   }
 
   .video {
     max-width: none;
     width: 100%;
-    height: auto;
     display: block;
-    padding: 1.6rem;
   }
 
   .descPain {
@@ -330,9 +340,9 @@
   .textPain {
     width: 100%;
     text-align: center;
-
     justify-content: center;
     align-items: center;
+    padding: 0 1.6rem;
   }
 
   .titlePain {

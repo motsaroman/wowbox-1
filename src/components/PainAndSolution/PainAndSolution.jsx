@@ -2,6 +2,7 @@ import styles from './PainAndSolution.module.css';
 
 import videoPoster from '../../assets/images/video-poster.jpg';
 import solutionMan from '../../assets/images/solution-man.png';
+import painVideo from '../../assets/videos/video.mp4';
 
 export default function PainAndSolution() {
   const cloudsData = [
@@ -38,11 +39,21 @@ export default function PainAndSolution() {
   return (
     <section className={styles.painAndSolution}>
       <div className={styles.topContainer}>
-        <div className={styles.videoWrapper}>
-          <video className={styles.video} poster={videoPoster} controls>
-            <source src="/assets/video.mp4" type="video/mp4" />
-          </video>
+        <div className={styles.videoOuter}>
+          <div className={styles.videoWrapper}>
+            <video className={styles.video} poster={videoPoster} controls>
+              <source
+                src={painVideo}
+                type="video/mp4"
+                autoPlay
+                muted
+                loop
+                playsInline
+              />
+            </video>
+          </div>
         </div>
+
         <div className={styles.textPain}>
           <h2 className={styles.titlePain}>Снова будешь дарить “носки”?</h2>
           <p className={styles.descPain}>
