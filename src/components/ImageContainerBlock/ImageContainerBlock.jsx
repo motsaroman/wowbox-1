@@ -23,7 +23,7 @@ export default function ImageContainerBlock() {
             <div className={styles.card}>
               <h3 className={styles.cardTitle}>01</h3>
               <p className={styles.cardText}>
-                Укажите бюджет и оставьте контакты
+                Пройдите квиз из 4-х вопросов за 30 секунд
               </p>
               <div className={styles.imageContainer}>
                 <img src={answer}  alt="Описание 1" className={styles.image} />
@@ -33,7 +33,7 @@ export default function ImageContainerBlock() {
           <div className={styles.cardWrap}>
             <div className={styles.card}>
               <h3 className={styles.cardTitle}>02</h3>
-              <p className={styles.cardText}>Пройдите квиз из 4-х вопросов за 30 секунд</p>
+              <p className={styles.cardText}>Укажите бюджет и оставьте контакты</p>
               <div className={styles.imageContainer}>
                 <img src={sending} alt="Описание 1" className={styles.image} />
               </div>

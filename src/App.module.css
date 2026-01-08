@@ -44,7 +44,7 @@ header {
   flex-direction: column;
   cursor: pointer;
   padding: 0.5rem;
-  background: none;
+  background: none !important;
   border: none;
   z-index: 1001;
 }

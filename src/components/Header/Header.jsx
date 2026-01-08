@@ -237,7 +237,7 @@ export default function Header() {
             Выбрать готовый подарок
           </button>
           <button className={`${styles.heroSelectButton} button-happy`} onClick={scrollToQuiz}>
-            Собрать персонализированный подарок бесплатно
+            Собрать персональный подарок бесплатно
           </button>
         </div>
       </div>
