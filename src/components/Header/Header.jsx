@@ -75,12 +75,16 @@ export default function Header() {
             {/* Ссылки десктоп */}
             {[
               { label: "Главная", ref: styles.hero },
+              { label: "Как это работает", ref: styles.howToWorksWowBox },
+              { label: "Гарантии и доставка", ref: styles.deliverys },
               { label: "Каталог", ref: styles.selectYourOwnWowbox },
+              { label: "Партнеры", ref: styles.partners },
               { label: "Подобрать WOWBOX", ref: styles.weFoundYourSuperWowbox },
-              { label: "Как это работает", ref: styles.howToWorkWowBox },
-              { label: "Качество", ref: styles.quality },
-              { label: "Гарантии и доставка", ref: styles.delivery },
               { label: "Вопросы и ответы", ref: styles.faq },
+              //{ label: "Качество", ref: styles.qualitys },
+              
+              
+             
             ].map((link, idx) => (
               <div key={idx} className={styles.navbarLink}>
                 <a
@@ -129,12 +133,13 @@ export default function Header() {
         <div className={styles.mobileNavLinks}>
           {[
             { label: "Главная", ref: styles.hero },
-            { label: "Каталог", ref: styles.selectYourOwnWowbox },
-            { label: "Подобрать WOWBOX", ref: styles.weFoundYourSuperWowbox },
-            { label: "Как это работает", ref: styles.howToWorkWowBox },
-            { label: "Качество", ref: styles.quality },
-            { label: "Гарантии и доставка", ref: styles.delivery },
-            { label: "Вопросы и ответы", ref: styles.faq },
+              { label: "Как это работает", ref: styles.howToWorksWowBox },
+              { label: "Гарантии и доставка", ref: styles.deliverys },
+              { label: "Каталог", ref: styles.selectYourOwnWowbox },
+              { label: "Партнеры", ref: styles.partners },
+              { label: "Подобрать WOWBOX", ref: styles.weFoundYourSuperWowbox },
+              { label: "Вопросы и ответы", ref: styles.faq },
+              //{ label: "Качество", ref: styles.qualitys },
           ].map((link, idx) => (
             <div key={idx}>
               <div className={styles.mobileNavLink}>
@@ -200,14 +205,14 @@ export default function Header() {
               <div
                 className={`${styles.heroBonusItem} ${styles.heroBonusItem}`}
               >
-                <p>ПОДБЕРЕМ И СОБЕРЕМ ПОДАРОК</p>
+                <p>БЕСПЛАТНАЯ ПЕРСОНАЛИЗАЦИЯ ПОДАРКОВ</p>
               </div>
             </div>
             <img src={heroBonusSticker1} alt="sticker" loading="lazy" />
           </div>
           <div className={styles.heroBonusWrapper}>
             <div className={`${styles.heroBonusItem} ${styles.heroBonusItem2}`}>
-              <p>ПОД ЛЮБОЙ БЮДЖЕТ</p>
+              <p>ПОДАРКИ ОТ 3000₽</p>
             </div>
           </div>
           <div className={styles.heroBonusWrapper}>
@@ -227,12 +232,12 @@ export default function Header() {
           </div>
         </div>
 
-        <div className={styles.heroSelectButtonWrapper}>
-          <button className={styles.heroSelectButton} onClick={scrollToWowbox}>
-            Купить в 1 клик
+        <div className={`${styles.heroSelectButtonWrapper}`}>
+          <button className={`${styles.heroSelectButton} button-one-click`} onClick={scrollToWowbox}>
+            Выбрать готовый подарок
           </button>
-          <button className={styles.heroSelectButton} onClick={scrollToQuiz}>
-            Собрать подарок от 3000₽
+          <button className={`${styles.heroSelectButton} button-happy`} onClick={scrollToQuiz}>
+            Собрать персонализированный подарок бесплатно
           </button>
         </div>
       </div>

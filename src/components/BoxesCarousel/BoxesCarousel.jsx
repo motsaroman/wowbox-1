@@ -5,6 +5,12 @@ import selectYourOwnWowboxCardArrow from "../../assets/icons/selectYourOwnWowbox
 import close from "../../assets/icons/close.svg";
 import styles from "./BoxesCarousel.module.css";
 
+const YM_ID = 105562569;
+const reachGoal = (goal) => {
+  if (window.ym) {
+    window.ym(YM_ID, "reachGoal", goal);
+  }
+};
 const LABELS_TO_SHOW = [3000, 5000, 20000, 50000, 120000];
 
 export default function BoxesCarousel() {
@@ -33,6 +39,27 @@ export default function BoxesCarousel() {
     fetchPricing();
   }, [fetchPricing]);
 
+  useEffect(() => {
+    if (window.dataLayer) {
+      const products = BOXES_DATA.map((box, index) => ({
+        id: box.id,
+        name: box.title,
+        price: selectedPrice, // Используем текущую выбранную цену или базовую
+        brand: "WOWBOX",
+        category: "Подарочные боксы",
+        list: "Главная страница - Карусель",
+        position: index + 1,
+      }));
+
+      window.dataLayer.push({
+        ecommerce: {
+          currencyCode: "RUB",
+          impressions: products,
+        },
+      });
+    }
+  }, []);
+
   // --- СИНХРОНИЗАЦИЯ ---
   // Вычисляем индекс на основе глобальной цены
   const foundIndex = priceSteps.indexOf(selectedPrice);
@@ -52,7 +79,28 @@ export default function BoxesCarousel() {
   };
 
   const handleOrderClick = (themeId) => {
-    // Цену устанавливать не нужно, она уже в сторе благодаря handleSliderChange
+    // Цель: Клик "Купить" после выбора бокса
+    reachGoal("buy_after_selection");
+    const box = BOXES_DATA.find((b) => b.id === themeId);
+    if (window.dataLayer && box) {
+      window.dataLayer.push({
+        ecommerce: {
+          currencyCode: "RUB",
+          click: {
+            products: [
+              {
+                id: box.id,
+                name: box.title,
+                price: currentPrice,
+                brand: "WOWBOX",
+                category: "Подарочные боксы",
+                list: "Главная страница - Карусель",
+              },
+            ],
+          },
+        },
+      });
+    }
     selectTheme(themeId);
     openPersonalization();
   };
@@ -176,7 +224,9 @@ export default function BoxesCarousel() {
                     return (
                       <div key={step} className={styles.sliderLabelWrapper}>
                         <span
-                          className={`${styles.sliderLabelText} ${step === 5000 ? styles.popularPrice : ""} ${step === 3000 ? styles.minPrice : ""} ${
+                          className={`${styles.sliderLabelText} ${
+                            step === 5000 ? styles.popularPrice : ""
+                          } ${step === 3000 ? styles.minPrice : ""} ${
                             idx === priceIndex ? styles.activeLabel : ""
                           }`}
                           style={{ opacity: isVisible ? 1 : 0 }}
@@ -184,7 +234,9 @@ export default function BoxesCarousel() {
                           {step}₽
                         </span>
                         {step === 5000 && (
-                          <span className={styles.specialLabel}><b>Популярный</b></span>
+                          <span className={styles.specialLabel}>
+                            <b>Популярный</b>
+                          </span>
                         )}
                       </div>
                     );
@@ -227,7 +279,7 @@ export default function BoxesCarousel() {
                       <br /> ~{currentPrice}-{maxTotalValue}₽
                     </li>
                     <li>
-                      Вы экономите:  ~{savings}₽
+                      Вы экономите: ~{savings}₽
                       <br /> на персональном подборе
                     </li>
                   </ul>

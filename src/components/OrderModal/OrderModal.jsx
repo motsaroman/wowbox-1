@@ -1,13 +1,13 @@
 import { useEffect, useState, useRef } from "react";
 import { useOrderStore } from "../../store/orderStore";
-import { useBoxStore } from "../../store/boxStore";
+import { useBoxStore, BOXES_DATA } from "../../store/boxStore";
 import DeliveryMapPage from "../DeliveryMapPage/DeliveryMapPage";
 import ContactForm from "./components/ContactForm";
 import RecipientForm from "./components/RecipientForm";
 import DeliverySection from "./components/DeliverySection";
 import PaymentSection from "./components/PaymentSection";
 import OrderSummary from "./components/OrderSummary";
-import DeliveryModal from "../DeliveryModal/DeliveryModal";
+//import DeliveryModal from "../DeliveryModal/DeliveryModal";
 
 import editIcon from "../../assets/icons/edit.svg";
 import texno1 from "../../assets/images/texno1.webp";
@@ -16,7 +16,12 @@ import texno3 from "../../assets/images/texno2.webp";
 import texno4 from "../../assets/images/texno3.webp";
 import styles from "./OrderModal.module.css";
 
-// --- ХЕЛПЕРЫ ДЛЯ КОНВЕРТАЦИИ ID КВИЗА В НАЗВАНИЯ ---
+const YM_ID = 105562569;
+const reachGoal = (goal) => {
+  if (window.ym) {
+    window.ym(YM_ID, "reachGoal", goal);
+  }
+};
 const getQuizAnswerTitle = (questionIndex, answerId) => {
   if (!answerId) return "Не указан";
 
@@ -88,18 +93,19 @@ export default function OrderModal({
   const [isMapOpen, setIsMapOpen] = useState(false);
 
   // Состояние видимости модального окна
-  const [isDeliveryWarningOpen, setIsDeliveryWarningOpen] = useState(false);
+  // const [isDeliveryWarningOpen, setIsDeliveryWarningOpen] = useState(false);
 
   // ИСПОЛЬЗУЕМ REF для мгновенного хранения статуса согласия
   // Это предотвратит повторное открытие даже при быстрых кликах
-  const hasAcceptedRef = useRef(false);
+  // const hasAcceptedRef = useRef(false);
 
   useEffect(() => {
     if (isOrderModalOpen) {
       resetForm();
       // Сбрасываем реф при открытии нового заказа
-      hasAcceptedRef.current = false;
+      // hasAcceptedRef.current = false;
       document.body.style.overflow = "hidden";
+      reachGoal("checkout_opened");
     } else {
       document.body.style.overflow = "unset";
     }
@@ -107,6 +113,12 @@ export default function OrderModal({
       document.body.style.overflow = "unset";
     };
   }, [isOrderModalOpen, resetForm]);
+
+  useEffect(() => {
+    if (isOrderModalOpen && formData.paymentMethod) {
+      reachGoal("payment_method_selected");
+    }
+  }, [formData.paymentMethod, isOrderModalOpen]);
 
   // --- ЕДИНАЯ ФУНКЦИЯ ОПЛАТЫ ---
   const processOrderPayment = async () => {
@@ -118,6 +130,11 @@ export default function OrderModal({
     try {
       const promoDiscount = promoApplied ? 500 : 0;
       const totalPrice = boxPrice + deliveryPrice - promoDiscount;
+      const themeId = personalizationData?.theme || selectedTheme;
+      const box = BOXES_DATA.find((b) => b.id === themeId) || {
+        id: "unknown",
+        title: "Бокс",
+      };
 
       const fullPersonalData = {
         theme: personalizationData?.theme || selectedTheme,
@@ -159,7 +176,9 @@ export default function OrderModal({
         formData.telegramNotify && formData.telegramUsername
           ? `Telegram: @${formData.telegramUsername.replace("@", "")}`
           : null,
-          formData.courierComment ? `Комментарий для курьера: ${formData.courierComment}` : null,
+        formData.courierComment
+          ? `Комментарий для курьера: ${formData.courierComment}`
+          : null,
         `--- Доставка ---`,
         `Пользователь уведомлен о задержке и согласился на презент.`,
       ];
@@ -198,7 +217,7 @@ export default function OrderModal({
           name: formData.name,
           phone: formData.phone,
           email: formData.email,
-          telegram: formData.telegramNotify ? formData.telegramUsername : null
+          telegram: formData.telegramNotify ? formData.telegramUsername : null,
         },
         recipientData: formData.isGift
           ? {
@@ -257,6 +276,39 @@ export default function OrderModal({
       const data = await response.json();
 
       if (response.ok && data.confirmationUrl) {
+        if (window.dataLayer && data.crmId) {
+          window.dataLayer.push({
+            ecommerce: {
+              currencyCode: "RUB",
+              purchase: {
+                actionField: {
+                  id: data.crmId, // ID заказа из CRM
+                  revenue: totalPrice, // Полная сумма чека
+                  coupon: formData.promoCode || "",
+                },
+                products: [
+                  {
+                    id: box.id,
+                    name: box.title,
+                    price: boxPrice,
+                    brand: "WOWBOX",
+                    category: "Подарочные боксы",
+                    quantity: 1,
+                    coupon: formData.promoCode || "",
+                  },
+                ],
+              },
+            },
+          });
+        }
+        const hasQuizAnswers =
+          fullPersonalData.quizAnswers &&
+          Object.keys(fullPersonalData.quizAnswers).length > 0;
+        if (hasQuizAnswers) {
+          reachGoal("buy_quiz_goal");
+        } else {
+          reachGoal("buy_quick_goal");
+        }
         // Успех
         window.location.href = data.confirmationUrl;
 
@@ -278,9 +330,8 @@ export default function OrderModal({
   // --- ОБРАБОТЧИК САБМИТА ФОРМЫ (КНОПКА ОПЛАТИТЬ) ---
   const handleFormSubmit = (e) => {
     // Если событие есть, предотвращаем перезагрузку
-    if (e) e.preventDefault();
+    if (e) e.preventDefault(); // Блокируем, если уже идет процесс
 
-    // Блокируем, если уже идет процесс
     if (isProcessing) return;
 
     if (!validateForm()) {
@@ -288,12 +339,8 @@ export default function OrderModal({
       return;
     }
 
-    // Проверяем через REF - это значение всегда актуально
-    if (hasAcceptedRef.current) {
-      processOrderPayment();
-    } else {
-      setIsDeliveryWarningOpen(true);
-    }
+    // Убрали проверку hasAcceptedRef и сразу вызываем оплату
+    processOrderPayment();
   };
 
   // --- ОБРАБОТЧИК КНОПКИ "ПОЛУЧИТЬ ПРЕЗЕНТ И ОПЛАТИТЬ" ---
@@ -485,11 +532,11 @@ export default function OrderModal({
         />
       )}
 
-      <DeliveryModal
+      {/*<DeliveryModal
         isOpen={isDeliveryWarningOpen}
         onClose={() => setIsDeliveryWarningOpen(false)}
         onAccept={handleDeliveryAccept}
-      />
+      />*/}
     </div>
   );
 }
