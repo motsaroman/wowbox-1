@@ -116,7 +116,7 @@
 .promoSection {
   width: 33.1rem;
   height: 5.9rem;
-  background: rgba(215, 255, 107, 1);
+  background: rgba(215, 255, 107, 1) !important;
   padding: 0.4rem;
   border-radius: 1.4rem;
   display: flex;
@@ -141,7 +141,7 @@
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  background: none;
+  background: rgba(215, 255, 107, 1) !important;;
   border-radius: 1.4rem;
   border: 0.1rem dashed rgba(168, 206, 69, 1);
   gap: 0.7rem;
