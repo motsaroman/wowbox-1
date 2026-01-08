@@ -16,6 +16,8 @@ import PrivacyPolicy from "./components/PrivacyPolicy/PrivacyPolicy.jsx";
 import PublicOffer from "./components/PublicOffer/PublicOffer.jsx";
 import PainAndSolution from "./components/PainAndSolution/PainAndSolution.jsx";
 import ImageContainerBlock from "./components/ImageContainerBlock/ImageContainerBlock.jsx";
+import ExamplesGallery from "./components/ExamplesGallery/ExamplesGallery.jsx";
+
 // Модалки
 import OrderModal from "./components/OrderModal/OrderModal.jsx";
 import DeliveryModal from "./components/DeliveryModal/DeliveryModal.jsx";
@@ -200,328 +202,327 @@ export default function App() {
 
   return (
     <>
-    <Routes>
-      <Route
-        path="/privacy"
-        element={<PrivacyPolicy isOpen={true} onClose={() => navigate("/")} />}
-      />
-      <Route
-        path="/public-offer"
-        element={<PublicOffer isOpen={true} onClose={() => navigate("/")} />}
-      />
-      <Route
-        path="/"
-        element={
-          <>
-            <PromoPopup />
-            <TelegramChat />
-            <Header />
+      <Routes>
+        <Route
+          path="/privacy"
+          element={<PrivacyPolicy isOpen={true} onClose={() => navigate("/")} />}
+        />
+        <Route
+          path="/public-offer"
+          element={<PublicOffer isOpen={true} onClose={() => navigate("/")} />}
+        />
+        <Route
+          path="/"
+          element={
+            <>
+              <PromoPopup />
+              <TelegramChat />
+              <Header />
 
-            <main>
-              {/*Секция Боль и Решение*/}
-              <PainAndSolution />
-              <ImageContainerBlock />
-              <QualitySection />
-              {/* Секция выбора бокса (Карусель) */}
-              <div className={styles.selectYourOwnWowbox}>
-                <h1>Выберите свой WOWBOX</h1>
-                <BoxesCarousel />
-              </div>
-              <PartnerSwiper />
-              {/* Секция Квиза */}
-              <div id="quiz" className={styles.weFoundYourSuperWowbox}>
-                <div className={styles.quizContainer}>
-                  <h2>
-                    Найдём ваш идеальный
-                    <br />
-                    WOWBOX за 30 секунд
-                  </h2>
-                  <p className={styles.quizSubtitle}>
-                    Ответьте на 4 вопроса - мы подберём бокс,
-                    <br />
-                    который точно вам подойдёт
-                  </p>
+              <main>
+                {/*Секция Боль и Решение*/}
+                <PainAndSolution />
+                <ImageContainerBlock />
+                <QualitySection />
+                {/* Секция выбора бокса (Карусель) */}
+                <div className={styles.selectYourOwnWowbox}>
+                  <h1>Выберите свой WOWBOX</h1>
+                  <BoxesCarousel />
+                </div>
+                <PartnerSwiper />
+                {/* Секция Квиза */}
+                <div id="quiz" className={styles.weFoundYourSuperWowbox}>
+                  <div className={styles.quizContainer}>
+                    <h2>
+                      Найдём ваш идеальный
+                      <br />
+                      WOWBOX за 30 секунд
+                    </h2>
+                    <p className={styles.quizSubtitle}>
+                      Ответьте на 4 вопроса - мы подберём бокс,
+                      <br />
+                      который точно вам подойдёт
+                    </p>
 
-                  <div className={styles.quizBox}>
-                    <div className={styles.quizHeader}>
-                      {/* Индикатор прогресса */}
-                      {currentQuestionIndex < quizData.length && (
-                        <div className={styles.progressDots}>
-                          {quizData.map((_, index) => (
-                            <span
-                              key={index}
-                              className={
-                                currentQuestionIndex === index
-                                  ? styles.active
-                                  : ""
-                              }
-                            ></span>
-                          ))}
-                        </div>
-                      )}
+                    <div className={styles.quizBox}>
+                      <div className={styles.quizHeader}>
+                        {/* Индикатор прогресса */}
+                        {currentQuestionIndex < quizData.length && (
+                          <div className={styles.progressDots}>
+                            {quizData.map((_, index) => (
+                              <span
+                                key={index}
+                                className={
+                                  currentQuestionIndex === index
+                                    ? styles.active
+                                    : ""
+                                }
+                              ></span>
+                            ))}
+                          </div>
+                        )}
 
-                      {/* Заголовок вопроса или результата */}
+                        {/* Заголовок вопроса или результата */}
+                        {currentQuestionIndex < quizData.length ? (
+                          <>
+                            <p className={styles.questionLabel}>
+                              ВОПРОС {currentQuestionIndex + 1}/{quizData.length}:
+                            </p>
+                            <h3 className={styles.questionTitle}>
+                              {quizData[currentQuestionIndex].question}
+                            </h3>
+                          </>
+                        ) : (
+                          <h3 className={styles.resultsTitle}>
+                            Ваш идеальный бокс:
+                          </h3>
+                        )}
+                      </div>
+
+                      {/* Тело Квиза */}
                       {currentQuestionIndex < quizData.length ? (
                         <>
-                          <p className={styles.questionLabel}>
-                            ВОПРОС {currentQuestionIndex + 1}/{quizData.length}:
-                          </p>
-                          <h3 className={styles.questionTitle}>
-                            {quizData[currentQuestionIndex].question}
-                          </h3>
+                          <div className={styles.quizOptions}>
+                            {quizData[currentQuestionIndex].options.map(
+                              (option) => (
+                                <div
+                                  key={option.id}
+                                  className={styles.quizOption}
+                                  onClick={() => handleQuizAnswer(option.id)}
+                                >
+                                  <img
+                                    className={styles.optionIcon}
+                                    src={option.icon}
+                                    alt={option.title}
+                                    loading="lazy"
+                                  />
+                                  <div className={styles.optionText}>
+                                    <p className={styles.optionTitle}>
+                                      {option.title}
+                                    </p>
+                                    {option.subtitle && (
+                                      <p className={styles.optionSubtitle}>
+                                        {option.subtitle}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              )
+                            )}
+                          </div>
+                          <div className={styles.quizActions}>
+                            {currentQuestionIndex > 0 && (
+                              <button
+                                className={styles.quizBackButton}
+                                onClick={prevQuestion}
+                              >
+                                <img src={toRight} alt="toRight" loading="lazy" />
+                                <span>Назад</span>
+                              </button>
+                            )}
+                          </div>
                         </>
                       ) : (
-                        <h3 className={styles.resultsTitle}>
-                          Ваш идеальный бокс:
-                        </h3>
+                        <>
+                          {/* Результаты Квиза */}
+                          <div className={styles.quizResults}>
+                            <div className={styles.recommendedBox}>
+                              <img
+                                src={recommendedBox.image}
+                                alt={recommendedBox.title}
+                                className={styles.boxImage}
+                                loading="lazy"
+                              />
+                              <h2 className={styles.boxTitle}>
+                                {recommendedBox.title}
+                              </h2>
+
+                              {/* --- ЗАМЕНА СТАТИЧНОЙ ЦЕНЫ НА ПОЛЗУНОК --- */}
+                              <div className={styles.budgetSection}>
+                                <p className={styles.budgetTitle}>
+                                  Ваш бюджет на подарок:
+                                </p>
+                                <p className={styles.budgetTitle}>
+                                  {currentPrice}₽
+                                </p>
+                                <div className={styles.sliderContainer}>
+                                  <input
+                                    type="range"
+                                    min="0"
+                                    max={max}
+                                    step="1"
+                                    value={priceIndex}
+                                    onChange={handleSliderChange}
+                                    className={styles.budgetSlider}
+                                    style={sliderStyle}
+                                  />
+                                  <div className={styles.sliderLabels}>
+                                    {priceSteps.map((step, idx) => {
+                                      const isVisible =
+                                        LABELS_TO_SHOW.includes(step);
+                                      return (
+                                        <div
+                                          key={step}
+                                          className={styles.sliderLabelWrapper}
+                                        >
+                                          <span
+                                            className={`${styles.sliderLabelText
+                                              } ${step === 5000
+                                                ? styles.popularPrice
+                                                : ""
+                                              } ${step === 3000 ? styles.minPrice : ""
+                                              } ${idx === priceIndex
+                                                ? styles.activeLabel
+                                                : ""
+                                              }`}
+                                            style={{ opacity: isVisible ? 1 : 0 }}
+                                          >
+                                            {step}₽
+                                          </span>
+                                          {step === 5000 && (
+                                            <span className={styles.specialLabel}>
+                                              <b>Популярный</b>
+                                            </span>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className={styles.boxDetails}>
+                                <h4 className={styles.detailsTitle}>
+                                  Что будет внутри:
+                                </h4>
+                                <ul className={styles.detailsList}>
+                                  {recommendedBox.details.items.map(
+                                    (detail, index) => (
+                                      <li
+                                        key={index}
+                                        dangerouslySetInnerHTML={{
+                                          __html: detail,
+                                        }}
+                                      />
+                                    )
+                                  )}
+                                </ul>
+                                {/* Динамические данные в boxSummary */}
+
+                                <div className={styles.budgetInfoResult}>
+                                  <p className={styles.infoTitle}>
+                                    Внутри бокса за {currentPrice}₽
+                                  </p>
+                                  <ul className={styles.infoList}>
+                                    <li>
+                                      Суммарная стоимость:
+                                      <br />~{currentPrice}-{maxTotalValue}₽
+                                    </li>
+                                    <li>
+                                      Вы экономите: ~{savings}₽
+                                      <br /> на персональном подборе
+                                    </li>
+                                  </ul>
+                                </div>
+                                {/* ----------------------------------------- */}
+                              </div>
+                            </div>
+                          </div>
+                          <div className={styles.quizActions}>
+                            <div className={styles.quizFinalButtons}>
+                              <button
+                                className={styles.quizResetButton}
+                                onClick={resetQuiz}
+                              >
+                                Пройти заново
+                              </button>
+                              <button
+                                className={styles.quizOrderButton}
+                                onClick={handleQuizOrder}
+                              >
+                                Заказать
+                              </button>
+                            </div>
+                          </div>
+                        </>
                       )}
                     </div>
-
-                    {/* Тело Квиза */}
-                    {currentQuestionIndex < quizData.length ? (
-                      <>
-                        <div className={styles.quizOptions}>
-                          {quizData[currentQuestionIndex].options.map(
-                            (option) => (
-                              <div
-                                key={option.id}
-                                className={styles.quizOption}
-                                onClick={() => handleQuizAnswer(option.id)}
-                              >
-                                <img
-                                  className={styles.optionIcon}
-                                  src={option.icon}
-                                  alt={option.title}
-                                  loading="lazy"
-                                />
-                                <div className={styles.optionText}>
-                                  <p className={styles.optionTitle}>
-                                    {option.title}
-                                  </p>
-                                  {option.subtitle && (
-                                    <p className={styles.optionSubtitle}>
-                                      {option.subtitle}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            )
-                          )}
-                        </div>
-                        <div className={styles.quizActions}>
-                          {currentQuestionIndex > 0 && (
-                            <button
-                              className={styles.quizBackButton}
-                              onClick={prevQuestion}
-                            >
-                              <img src={toRight} alt="toRight" loading="lazy" />
-                              <span>Назад</span>
-                            </button>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        {/* Результаты Квиза */}
-                        <div className={styles.quizResults}>
-                          <div className={styles.recommendedBox}>
-                            <img
-                              src={recommendedBox.image}
-                              alt={recommendedBox.title}
-                              className={styles.boxImage}
-                              loading="lazy"
-                            />
-                            <h2 className={styles.boxTitle}>
-                              {recommendedBox.title}
-                            </h2>
-
-                            {/* --- ЗАМЕНА СТАТИЧНОЙ ЦЕНЫ НА ПОЛЗУНОК --- */}
-                            <div className={styles.budgetSection}>
-                              <p className={styles.budgetTitle}>
-                                Ваш бюджет на подарок:
-                              </p>
-                              <p className={styles.budgetTitle}>
-                                {currentPrice}₽
-                              </p>
-                              <div className={styles.sliderContainer}>
-                                <input
-                                  type="range"
-                                  min="0"
-                                  max={max}
-                                  step="1"
-                                  value={priceIndex}
-                                  onChange={handleSliderChange}
-                                  className={styles.budgetSlider}
-                                  style={sliderStyle}
-                                />
-                                <div className={styles.sliderLabels}>
-                                  {priceSteps.map((step, idx) => {
-                                    const isVisible =
-                                      LABELS_TO_SHOW.includes(step);
-                                    return (
-                                      <div
-                                        key={step}
-                                        className={styles.sliderLabelWrapper}
-                                      >
-                                        <span
-                                          className={`${
-                                            styles.sliderLabelText
-                                          } ${
-                                            step === 5000
-                                              ? styles.popularPrice
-                                              : ""
-                                          } ${
-                                            step === 3000 ? styles.minPrice : ""
-                                          } ${
-                                            idx === priceIndex
-                                              ? styles.activeLabel
-                                              : ""
-                                          }`}
-                                          style={{ opacity: isVisible ? 1 : 0 }}
-                                        >
-                                          {step}₽
-                                        </span>
-                                        {step === 5000 && (
-                                          <span className={styles.specialLabel}>
-                                            <b>Популярный</b>
-                                          </span>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            </div>
-                            <div className={styles.boxDetails}>
-                              <h4 className={styles.detailsTitle}>
-                                Что будет внутри:
-                              </h4>
-                              <ul className={styles.detailsList}>
-                                {recommendedBox.details.items.map(
-                                  (detail, index) => (
-                                    <li
-                                      key={index}
-                                      dangerouslySetInnerHTML={{
-                                        __html: detail,
-                                      }}
-                                    />
-                                  )
-                                )}
-                              </ul>
-                              {/* Динамические данные в boxSummary */}
-
-                              <div className={styles.budgetInfoResult}>
-                                <p className={styles.infoTitle}>
-                                  Внутри бокса за {currentPrice}₽
-                                </p>
-                                <ul className={styles.infoList}>
-                                  <li>
-                                    Суммарная стоимость:
-                                    <br />~{currentPrice}-{maxTotalValue}₽
-                                  </li>
-                                  <li>
-                                    Вы экономите: ~{savings}₽
-                                    <br /> на персональном подборе
-                                  </li>
-                                </ul>
-                              </div>
-                              {/* ----------------------------------------- */}
-                            </div>
-                          </div>
-                        </div>
-                        <div className={styles.quizActions}>
-                          <div className={styles.quizFinalButtons}>
-                            <button
-                              className={styles.quizResetButton}
-                              onClick={resetQuiz}
-                            >
-                              Пройти заново
-                            </button>
-                            <button
-                              className={styles.quizOrderButton}
-                              onClick={handleQuizOrder}
-                            >
-                              Заказать
-                            </button>
-                          </div>
-                        </div>
-                      </>
-                    )}
                   </div>
                 </div>
-              </div>
-              {/* Секция "Как это работает" */}
-              {/*<HowItWorksSection />*/}
-              {/* Секция "Качество" */}
+                {/* Секция "Как это работает" */}
+                {/*<HowItWorksSection />*/}
+                {/* Секция "Качество" */}
 
-              {/* Секция "Гарантии и доставка" */}
-              {/*<DeliverySection />*/}
-              {/* Секция FAQ */}
-              <div className={styles.faq}>
-                <h1 className={styles.faqTitle}>FAQ</h1>
-                <p className={styles.faqSubtitle}>Часто задаваемые вопросы</p>
-                <div className={styles.faqItems}>
-                  {faqData.map((faq, index) => (
-                    <div
-                      key={index}
-                      className={`${styles.faqItem} ${
-                        openFaqIndex === index ? styles.faqItemOpen : ""
-                      }`}
-                    >
+                {/* Секция "Гарантии и доставка" */}
+                {/*<DeliverySection />*/}
+
+                {/* Блок примеров персонализации */}
+                <ExamplesGallery />
+                
+                {/* Секция FAQ */}
+                <div className={styles.faq}>
+                  <h1 className={styles.faqTitle}>FAQ</h1>
+                  <p className={styles.faqSubtitle}>Часто задаваемые вопросы</p>
+                  <div className={styles.faqItems}>
+                    {faqData.map((faq, index) => (
                       <div
-                        className={styles.faqItemHeader}
-                        onClick={() => toggleFaq(index)}
+                        key={index}
+                        className={`${styles.faqItem} ${openFaqIndex === index ? styles.faqItemOpen : ""
+                          }`}
                       >
-                        <h3>{faq.question}</h3>
-                        <div className={styles.faqToggle}>
-                          {openFaqIndex === index ? "×" : "+"}
+                        <div
+                          className={styles.faqItemHeader}
+                          onClick={() => toggleFaq(index)}
+                        >
+                          <h3>{faq.question}</h3>
+                          <div className={styles.faqToggle}>
+                            {openFaqIndex === index ? "×" : "+"}
+                          </div>
                         </div>
+                        {openFaqIndex === index && faq.answer && (
+                          <div className={styles.faqItemContent}>
+                            <div
+                              className={styles.textContainer}
+                              dangerouslySetInnerHTML={{ __html: faq.answer }}
+                            />
+                          </div>
+                        )}
                       </div>
-                      {openFaqIndex === index && faq.answer && (
-                        <div className={styles.faqItemContent}>
-                          <div
-                            className={styles.textContainer}
-                            dangerouslySetInnerHTML={{ __html: faq.answer }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <div className={styles.readyForSurprise}>
-                <h1 className={styles.readyForSurpriseTitle}>
-                  Готовы к сюрпризу?
-                </h1>
-                <p className={styles.readyForSurpriseSubtitle}>
-                  Закажите WOWBOX прямо сейчас
-                </p>
-                <div className={styles.readyForSurpriseButtonWrapper}>
-                  <button
-                    className={styles.readyForSurpriseButton}
-                    onClick={scrollToWowbox}
-                  >
-                    Собрать персонализированный подарок бесплатно
-                  </button>
+                <div className={styles.readyForSurprise}>
+                  <h1 className={styles.readyForSurpriseTitle}>
+                    Готовы к сюрпризу?
+                  </h1>
+                  <p className={styles.readyForSurpriseSubtitle}>
+                    Закажите WOWBOX прямо сейчас
+                  </p>
+                  <div className={styles.readyForSurpriseButtonWrapper}>
+                    <button
+                      className={styles.readyForSurpriseButton}
+                      onClick={scrollToWowbox}
+                    >
+                      Собрать персонализированный подарок бесплатно
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </main>
+              </main>
 
-            <Footer />
-            <BoxingPersonalization />
+              <Footer />
+              <BoxingPersonalization />
 
-            {/* Глобальные модальные окна (управляемые через Store) */}
-            <OrderModal
-              onPayment={(paymentMethod) => {
-                setSelectedPaymentMethod(paymentMethod);
-                setDeliveryModalOpen(true);
-              }}
-              onOpenPrivacyPolicy={() => navigate("/privacy")}
-              onOpenPublicOffer={() => navigate("/public-offer")}
-            />
+              {/* Глобальные модальные окна (управляемые через Store) */}
+              <OrderModal
+                onPayment={(paymentMethod) => {
+                  setSelectedPaymentMethod(paymentMethod);
+                  setDeliveryModalOpen(true);
+                }}
+                onOpenPrivacyPolicy={() => navigate("/privacy")}
+                onOpenPublicOffer={() => navigate("/public-offer")}
+              />
 
-            {/*<DeliveryModal
+              {/*<DeliveryModal
               isOpen={isDeliveryModalOpen}
               onClose={() => setDeliveryModalOpen(false)}
               onAccept={() => {
@@ -533,49 +534,49 @@ export default function App() {
                 }
               }}
             />*/}
-            <BankSelectionModal
-              isOpen={isBankSelectionModalOpen}
-              onClose={() => setBankSelectionModalOpen(false)}
-              onSelectBank={(bank) => {
-                console.log("Selected bank:", bank);
-                setBankSelectionModalOpen(false);
-                setPaymentWaitingModalOpen(true);
-                setTimeout(() => {
-                  setPaymentWaitingModalOpen(false);
+              <BankSelectionModal
+                isOpen={isBankSelectionModalOpen}
+                onClose={() => setBankSelectionModalOpen(false)}
+                onSelectBank={(bank) => {
+                  console.log("Selected bank:", bank);
+                  setBankSelectionModalOpen(false);
+                  setPaymentWaitingModalOpen(true);
+                  setTimeout(() => {
+                    setPaymentWaitingModalOpen(false);
+                    setPaymentResultModalOpen(true);
+                  }, 3000);
+                }}
+              />
+              <PaymentWaitingModal
+                isOpen={isPaymentWaitingModalOpen}
+                onClose={() => setPaymentWaitingModalOpen(false)}
+              />
+              <SmsModal
+                isOpen={isSmsModalOpen}
+                onClose={() => setSmsModalOpen(false)}
+                onVerify={(code) => {
+                  console.log("SMS code verified:", code);
+                  setSmsModalOpen(false);
                   setPaymentResultModalOpen(true);
-                }, 3000);
-              }}
-            />
-            <PaymentWaitingModal
-              isOpen={isPaymentWaitingModalOpen}
-              onClose={() => setPaymentWaitingModalOpen(false)}
-            />
-            <SmsModal
-              isOpen={isSmsModalOpen}
-              onClose={() => setSmsModalOpen(false)}
-              onVerify={(code) => {
-                console.log("SMS code verified:", code);
-                setSmsModalOpen(false);
-                setPaymentResultModalOpen(true);
-              }}
-              phoneNumber="+998 XX XXX-XX-XX"
-            />
-            <PaymentResultModal
-              isOpen={isPaymentResultModalOpen}
-              onClose={() => setPaymentResultModalOpen(false)}
-              isSuccess={true}
-              orderNumber="OO OOO OOO1"
-              onRetry={() => {
-                setPaymentResultModalOpen(false);
-                setDeliveryModalOpen(true);
-              }}
-              onGoHome={() => setPaymentResultModalOpen(false)}
-            />
-          </>
-        }
-      />
-    </Routes>
-    <CookieConsent />
-</>
+                }}
+                phoneNumber="+998 XX XXX-XX-XX"
+              />
+              <PaymentResultModal
+                isOpen={isPaymentResultModalOpen}
+                onClose={() => setPaymentResultModalOpen(false)}
+                isSuccess={true}
+                orderNumber="OO OOO OOO1"
+                onRetry={() => {
+                  setPaymentResultModalOpen(false);
+                  setDeliveryModalOpen(true);
+                }}
+                onGoHome={() => setPaymentResultModalOpen(false)}
+              />
+            </>
+          }
+        />
+      </Routes>
+      <CookieConsent />
+    </>
   );
 }

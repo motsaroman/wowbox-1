@@ -1,0 +1,270 @@
+.section {
+  width: 100%;
+  padding: 6rem 2rem;
+  background: #ffffff;
+}
+
+.title {
+  font-family: "SF Pro";
+  font-weight: 870;
+  font-size: clamp(2.4rem, 4vw, 3.2rem);
+  line-height: 110%;
+  text-align: center;
+  color: rgba(51, 51, 51, 1);
+  margin-bottom: 4rem;
+  padding: 0 1rem;
+}
+
+.grid {
+  max-width: 120rem;
+  margin: 0 auto;
+  column-count: 3;
+  column-gap: 3.2rem;
+  width: 100%;
+}
+
+.item {
+  break-inside: avoid;
+  margin-bottom: 3.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.imageBtn {
+  width: 100%;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  background: none !important;
+  display: block;
+}
+
+.image {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  border-radius: 12px;
+  transition: transform 0.3s ease;
+  will-change: transform;
+}
+
+.imageBtn:hover .image {
+  transform: scale(1.02);
+}
+
+.caption {
+  margin-top: 1.4rem;
+  font-family: "SF Pro";
+  font-weight: 600;
+  font-size: 1.5rem;
+  line-height: 120%;
+  color: rgba(0, 0, 0, 0.8);
+  text-align: center;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 2rem;
+  animation: overlayIn 200ms ease-out;
+}
+
+@keyframes overlayIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal {
+  position: relative;
+  width: min(90vw, 70rem);
+  max-height: 85vh;
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  transform-origin: center;
+  animation: modalIn 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+@keyframes modalIn {
+  from {
+    transform: scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.modalTop {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 20;
+}
+
+.closeBtn {
+  width: 3.6rem !important;
+  height: 3.6rem !important;
+  border: none !important;
+  background: transparent !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 2.8rem !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  color: rgba(0, 0, 0, 0.5) !important;
+  transition: all 0.2s ease !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.closeBtn:hover {
+  color: rgba(0, 0, 0, 1) !important;
+  transform: rotate(90deg) !important;
+}
+
+.modalMedia {
+  width: 100%;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2.4rem 2.4rem 0 2.4rem;
+  background: transparent;
+}
+
+.modalImage {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 50vh;
+  object-fit: contain;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+.modalBody {
+  padding: 2.4rem 3.2rem 3.2rem 3.2rem;
+  overflow-y: auto;
+  text-align: center;
+  flex-grow: 1;
+}
+
+.modalTitle {
+  font-family: "SF Pro";
+  font-weight: 700;
+  font-size: 2.4rem;
+  line-height: 120%;
+  color: rgba(0, 0, 0, 0.9);
+  margin-bottom: 1.2rem;
+}
+
+.modalText {
+  font-family: "SF Pro";
+  font-weight: 400;
+  font-size: 1.7rem;
+  line-height: 150%;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+@media (max-width: 1024px) {
+  .section {
+    padding: 5rem 2rem;
+  }
+  
+  .grid {
+    column-count: 2;
+    column-gap: 2.4rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .section {
+    padding: 4rem 1.6rem;
+  }
+
+  .grid {
+    column-count: 1;
+    column-gap: 0;
+  }
+  
+  .title {
+    margin-bottom: 3.2rem;
+  }
+
+  .overlay {
+    padding: 2rem;
+    align-items: center;
+  }
+
+  .modal {
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    max-height: 85vh;
+    border-radius: 20px;
+    animation: modalIn 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .modalTop {
+    top: 1rem;
+    right: 1rem;
+  }
+  
+  .closeBtn {
+    width: 3.6rem !important;
+    height: 3.6rem !important;
+    font-size: 2.6rem !important;
+  }
+
+  .modalMedia {
+    padding: 4rem 1.6rem 0 1.6rem;
+    max-height: none;
+  }
+
+  .modalImage {
+    width: auto;
+    max-width: 100%;
+    max-height: 40vh;
+    border-radius: 12px;
+    margin: 0 auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  }
+
+  .modalBody {
+    padding: 2rem 1.6rem 2.4rem 1.6rem;
+  }
+
+  .modalTitle {
+    font-size: 2.2rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .modalText {
+    font-size: 1.5rem;
+  }
+}
