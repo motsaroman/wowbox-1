@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import styles from "./ExamplesGallery.module.css";
 
-import example1 from "../../assets/images/example1.jpg";
-import example2 from "../../assets/images/example6.jpg";
-import example3 from "../../assets/images/example3.jpg";
-import example4 from "../../assets/images/example2.jpg";
-import example5 from "../../assets/images/example4.jpg";
-import example6 from "../../assets/images/example5.jpg";
+import example1 from "../../assets/images/example4.jpg";
+import example2 from "../../assets/images/example5.jpg";
+import example3 from "../../assets/images/example6.jpg";
+import example4 from "../../assets/images/example1.jpg";
+import example5 from "../../assets/images/example2.jpg";
+import example6 from "../../assets/images/example3.jpg";
 
 const items = [
   {

@@ -16,7 +16,7 @@
 }
 
 .grid {
-  max-width: 120rem;
+  max-width: 96rem;
   margin: 0 auto;
   column-count: 3;
   column-gap: 3.2rem;
@@ -30,6 +30,7 @@
   flex-direction: column;
   align-items: center;
   width: 100%;
+  position: relative;
 }
 
 .imageBtn {
@@ -195,25 +196,54 @@
   .section {
     padding: 5rem 2rem;
   }
-  
+
   .grid {
     column-count: 2;
     column-gap: 2.4rem;
+    max-width: 96rem;
   }
 }
 
 @media (max-width: 640px) {
   .section {
-    padding: 4rem 1.6rem;
+    padding: 4rem 0;
+  }
+
+  .title {
+    margin-bottom: 3.2rem;
+    padding: 0 1.6rem;
   }
 
   .grid {
-    column-count: 1;
+    display: flex;
+    column-count: auto;
     column-gap: 0;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 0 1.6rem 2rem 1.6rem;
+    gap: 1.6rem;
+    scrollbar-width: none;
   }
-  
-  .title {
-    margin-bottom: 3.2rem;
+
+  .grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .item .image {
+    object-fit: cover;
+    aspect-ratio: 1 / 1;
+    height: 100%;
+  }
+
+  .item {
+    flex: 0 0 85%;
+    max-width: 340px;
+    scroll-snap-align: center;
+    margin-bottom: 0;
+  }
+
+  .caption {
+    padding: 0 0.5rem;
   }
 
   .overlay {
@@ -234,7 +264,7 @@
     top: 1rem;
     right: 1rem;
   }
-  
+
   .closeBtn {
     width: 3.6rem !important;
     height: 3.6rem !important;

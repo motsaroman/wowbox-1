@@ -102,8 +102,8 @@ export default function App() {
   const sliderStyle = {
     background: `linear-gradient(to right, #93d3e1 0%, #93d3e1 ${percentage}%, #e2e1df ${percentage}%, #e2e1df 100%)`,
   };
-  const scrollToWowbox = () => {
-    const element = document.querySelector(`.${styles.selectYourOwnWowbox}`);
+  const scrollToQuiz = () => {
+    const element = document.querySelector(`.${styles.weFoundYourSuperWowbox}`);
     if (element) element.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -501,9 +501,9 @@ export default function App() {
                   <div className={styles.readyForSurpriseButtonWrapper}>
                     <button
                       className={styles.readyForSurpriseButton}
-                      onClick={scrollToWowbox}
+                      onClick={scrollToQuiz}
                     >
-                      Собрать персонализированный подарок бесплатно
+                      Собрать персональный подарок бесплатно
                     </button>
                   </div>
                 </div>
