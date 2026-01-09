@@ -85,6 +85,42 @@ export default function App() {
 
   const setOrderBoxPrice = useOrderStore((state) => state.setBoxPrice);
 
+  // --- ЛОГИКА ФОРМЫ (НОВОЕ) ---
+  const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
+    telegram: "",
+    wishes: "",
+  });
+  const [isTelegramActive, setIsTelegramActive] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false); // Состояние для модалки успеха
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (formErrors[name]) {
+      setFormErrors((prev) => ({ ...prev, [name]: false }));
+    }
+  };
+
+  const handleTelegramToggle = () => {
+    setIsTelegramActive(!isTelegramActive);
+    if (isTelegramActive) {
+      // Если выключаем, очищаем поле
+      setFormData((prev) => ({ ...prev, telegram: "" }));
+    }
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.name.trim()) errors.name = true;
+    if (!formData.phone.trim()) errors.phone = true;
+    if (isTelegramActive && !formData.telegram.trim()) errors.telegram = true;
+    return errors;
+  };
+  // ---------------------------
+
   useEffect(() => {
     fetchPricing();
   }, [fetchPricing]);
@@ -127,8 +163,13 @@ export default function App() {
     reachGoal("quiz_back");
     prevQuestionAction();
   };
+
+  // Сброс квиза теперь также очищает форму
   const resetQuiz = () => {
     reachGoal("quiz_restart");
+    setFormData({ name: "", phone: "", telegram: "", wishes: "" });
+    setIsTelegramActive(false);
+    setFormErrors({});
     resetQuizAction();
   };
 
@@ -140,31 +181,75 @@ export default function App() {
     setSelectedPrice(newPrice);
     setOrderBoxPrice(newPrice);
   };
-  const handleQuizOrder = () => {
-    reachGoal("buy_after_quiz");
-    const box = BOXES_DATA.find((b) => b.title === recommendedBox.title);
-    if (window.dataLayer && box) {
+
+  const recommendedBox = getRecommendedBox();
+
+  // --- ФУНКЦИЯ ОТПРАВКИ В БИТРИКС (ОБНОВЛЕННАЯ) ---
+  const sendOrderToBitrix = async () => {
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
+    reachGoal("buy_after_quiz"); // Цель при успешной отправке формы
+
+    // Формирование данных для аналитики (DataLayer)
+    if (window.dataLayer) {
       window.dataLayer.push({
         ecommerce: {
           currencyCode: "RUB",
           add: {
             products: [
               {
-                id: box.id,
-                name: box.title,
+                id: recommendedBox?.id || "custom_box",
+                name: recommendedBox?.title || "Персональный подбор",
                 price: selectedPrice,
                 brand: "WOWBOX",
                 category: "Подарочные боксы",
                 quantity: 1,
-                list: "Результаты квиза",
+                list: "Форма заявки квиза",
               },
             ],
           },
         },
       });
     }
-    applyRecommendation();
+
+    try {
+      // Подготовка параметров для вебхука
+      const queryParams = new URLSearchParams({
+        "fields[TITLE]": `Заявка с сайта WOWBOX (Квиз)`,
+        "fields[NAME]": formData.name,
+        "fields[PHONE][0][VALUE]": formData.phone,
+        "fields[PHONE][0][VALUE_TYPE]": "WORK",
+        "fields[COMMENTS]": `
+          Бюджет: ${currentPrice}₽.
+          Предварительный бокс: ${recommendedBox.title}.
+          Telegram: ${isTelegramActive ? formData.telegram : "Не указан"}.
+          Пожелания: ${formData.wishes}
+        `,
+        "fields[OPPORTUNITY]": currentPrice,
+        "fields[SOURCE_ID]": "WEB",
+      });
+
+      // !!! ВАЖНО: ЗАМЕНИТЕ 'YOUR_BITRIX_WEBHOOK_URL' НА ВАШ РЕАЛЬНЫЙ URL !!!
+      await fetch(`YOUR_BITRIX_WEBHOOK_URL/crm.lead.add.json?${queryParams}`);
+
+      // ВМЕСТО ALERT ОТКРЫВАЕМ МОДАЛКУ
+      setIsSuccessModalOpen(true);
+    } catch (error) {
+      console.error("Ошибка отправки в Битрикс", error);
+      alert("Произошла ошибка при отправке заявки. Попробуйте позже.");
+    }
   };
+
+  // Функция закрытия модалки успеха и сброса квиза
+  const handleCloseSuccessModal = () => {
+    setIsSuccessModalOpen(false);
+    resetQuiz();
+  };
+  // ------------------------------------------
 
   const toggleFaq = (index) => {
     // Если мы открываем (а не закрываем), шлем цель
@@ -174,10 +259,10 @@ export default function App() {
     toggleFaqAction(index);
   };
 
-  const recommendedBox = getRecommendedBox();
+  // Эффект для DataLayer при просмотре результатов (оставляем для аналитики)
   useEffect(() => {
     if (currentQuestionIndex >= quizData.length && window.dataLayer) {
-      const box = BOXES_DATA.find((b) => b.title === recommendedBox.title); // Находим бокс по title, т.к. recommendedBox это объект
+      const box = BOXES_DATA.find((b) => b.title === recommendedBox.title);
       if (box) {
         window.dataLayer.push({
           ecommerce: {
@@ -187,7 +272,7 @@ export default function App() {
                 {
                   id: box.id,
                   name: box.title,
-                  price: selectedPrice, // Цена из ползунка
+                  price: selectedPrice,
                   brand: "WOWBOX",
                   category: "Подарочные боксы",
                   list: "Результаты квиза",
@@ -205,7 +290,9 @@ export default function App() {
       <Routes>
         <Route
           path="/privacy"
-          element={<PrivacyPolicy isOpen={true} onClose={() => navigate("/")} />}
+          element={
+            <PrivacyPolicy isOpen={true} onClose={() => navigate("/")} />
+          }
         />
         <Route
           path="/public-offer"
@@ -246,7 +333,7 @@ export default function App() {
 
                     <div className={styles.quizBox}>
                       <div className={styles.quizHeader}>
-                        {/* Индикатор прогресса */}
+                        {/* Индикатор прогресса (показываем только пока идут вопросы) */}
                         {currentQuestionIndex < quizData.length && (
                           <div className={styles.progressDots}>
                             {quizData.map((_, index) => (
@@ -266,7 +353,8 @@ export default function App() {
                         {currentQuestionIndex < quizData.length ? (
                           <>
                             <p className={styles.questionLabel}>
-                              ВОПРОС {currentQuestionIndex + 1}/{quizData.length}:
+                              ВОПРОС {currentQuestionIndex + 1}/
+                              {quizData.length}:
                             </p>
                             <h3 className={styles.questionTitle}>
                               {quizData[currentQuestionIndex].question}
@@ -274,7 +362,7 @@ export default function App() {
                           </>
                         ) : (
                           <h3 className={styles.resultsTitle}>
-                            Ваш идеальный бокс:
+                            Подбор идеального подарка
                           </h3>
                         )}
                       </div>
@@ -316,7 +404,11 @@ export default function App() {
                                 className={styles.quizBackButton}
                                 onClick={prevQuestion}
                               >
-                                <img src={toRight} alt="toRight" loading="lazy" />
+                                <img
+                                  src={toRight}
+                                  alt="toRight"
+                                  loading="lazy"
+                                />
                                 <span>Назад</span>
                               </button>
                             )}
@@ -324,25 +416,93 @@ export default function App() {
                         </>
                       ) : (
                         <>
-                          {/* Результаты Квиза */}
-                          <div className={styles.quizResults}>
-                            <div className={styles.recommendedBox}>
-                              <img
-                                src={recommendedBox.image}
-                                alt={recommendedBox.title}
-                                className={styles.boxImage}
-                                loading="lazy"
-                              />
-                              <h2 className={styles.boxTitle}>
-                                {recommendedBox.title}
-                              </h2>
+                          {/* --- ЭКРАН С ФОРМОЙ И БЮДЖЕТОМ --- */}
+                          <div className={styles.quizResultsForm}>
+                            <div className={styles.formContainer}>
+                              <div className={styles.inputGroup}>
+                                <label className={styles.inputLabel}>
+                                  Имя *
+                                </label>
+                                <input
+                                  type="text"
+                                  name="name"
+                                  placeholder="Введите имя..."
+                                  value={formData.name}
+                                  onChange={handleInputChange}
+                                  className={`${styles.formInput} ${
+                                    formErrors.name ? styles.inputError : ""
+                                  }`}
+                                />
+                              </div>
 
-                              {/* --- ЗАМЕНА СТАТИЧНОЙ ЦЕНЫ НА ПОЛЗУНОК --- */}
-                              <div className={styles.budgetSection}>
-                                <p className={styles.budgetTitle}>
+                              <div className={styles.inputGroup}>
+                                <label className={styles.inputLabel}>
+                                  Телефон *
+                                </label>
+                                <input
+                                  type="tel"
+                                  name="phone"
+                                  placeholder="+7 (000) 000-00-00"
+                                  value={formData.phone}
+                                  onChange={handleInputChange}
+                                  className={`${styles.formInput} ${
+                                    formErrors.phone ? styles.inputError : ""
+                                  }`}
+                                />
+                              </div>
+
+                              <div className={styles.toggleGroup}>
+                                <span className={styles.toggleLabel}>
+                                  Хочу получать информацию о заказе в Telegram
+                                </span>
+                                <label className={styles.switch}>
+                                  <input
+                                    type="checkbox"
+                                    checked={isTelegramActive}
+                                    onChange={handleTelegramToggle}
+                                  />
+                                  <span className={styles.sliderRound}></span>
+                                </label>
+                              </div>
+
+                              {isTelegramActive && (
+                                <div
+                                  className={`${styles.inputGroup} ${styles.fadeInd}`}
+                                >
+                                  <input
+                                    type="text"
+                                    name="telegram"
+                                    placeholder="@username"
+                                    value={formData.telegram}
+                                    onChange={handleInputChange}
+                                    className={`${styles.formInput} ${
+                                      formErrors.telegram
+                                        ? styles.inputError
+                                        : ""
+                                    }`}
+                                  />
+                                </div>
+                              )}
+
+                              <div className={styles.inputGroup}>
+                                <h4 className={styles.wishesTitle}>
+                                  Дополнительные пожелания
+                                </h4>
+                                <textarea
+                                  name="wishes"
+                                  placeholder="Напишите дополнительные пожелания..."
+                                  value={formData.wishes}
+                                  onChange={handleInputChange}
+                                  className={styles.formTextarea}
+                                />
+                              </div>
+
+                              {/* Крупный блок бюджета */}
+                              <div className={styles.budgetSectionLarge}>
+                                <p className={styles.budgetTitleLarge}>
                                   Ваш бюджет на подарок:
                                 </p>
-                                <p className={styles.budgetTitle}>
+                                <p className={styles.budgetPriceLarge}>
                                   {currentPrice}₽
                                 </p>
                                 <div className={styles.sliderContainer}>
@@ -366,88 +526,63 @@ export default function App() {
                                           className={styles.sliderLabelWrapper}
                                         >
                                           <span
-                                            className={`${styles.sliderLabelText
-                                              } ${step === 5000
+                                            className={`${
+                                              styles.sliderLabelText
+                                            } ${
+                                              step === 5000
                                                 ? styles.popularPrice
                                                 : ""
-                                              } ${step === 3000 ? styles.minPrice : ""
-                                              } ${idx === priceIndex
+                                            } ${
+                                              step === 3000
+                                                ? styles.minPrice
+                                                : ""
+                                            } ${
+                                              idx === priceIndex
                                                 ? styles.activeLabel
                                                 : ""
-                                              }`}
-                                            style={{ opacity: isVisible ? 1 : 0 }}
+                                            }`}
+                                            style={{
+                                              opacity: isVisible ? 1 : 0,
+                                            }}
                                           >
                                             {step}₽
                                           </span>
-                                          {step === 5000 && (
-                                            <span className={styles.specialLabel}>
-                                              <b>Популярный</b>
-                                            </span>
-                                          )}
                                         </div>
                                       );
                                     })}
                                   </div>
                                 </div>
-                              </div>
-                              <div className={styles.boxDetails}>
-                                <h4 className={styles.detailsTitle}>
-                                  Что будет внутри:
-                                </h4>
-                                <ul className={styles.detailsList}>
-                                  {recommendedBox.details.items.map(
-                                    (detail, index) => (
-                                      <li
-                                        key={index}
-                                        dangerouslySetInnerHTML={{
-                                          __html: detail,
-                                        }}
-                                      />
-                                    )
-                                  )}
-                                </ul>
-                                {/* Динамические данные в boxSummary */}
 
-                                <div className={styles.budgetInfoResult}>
-                                  <p className={styles.infoTitle}>
-                                    Внутри бокса за {currentPrice}₽
+                                <div className={styles.budgetInfoResultSmall}>
+                                  <p>
+                                    Внутри бокса за {currentPrice}₽: Суммарная
+                                    стоимость ~{currentPrice}-{maxTotalValue}₽.
+                                    Вы экономите ~{savings}₽
                                   </p>
-                                  <ul className={styles.infoList}>
-                                    <li>
-                                      Суммарная стоимость:
-                                      <br />~{currentPrice}-{maxTotalValue}₽
-                                    </li>
-                                    <li>
-                                      Вы экономите: ~{savings}₽
-                                      <br /> на персональном подборе
-                                    </li>
-                                  </ul>
                                 </div>
-                                {/* ----------------------------------------- */}
                               </div>
                             </div>
-                          </div>
-                          <div className={styles.quizActions}>
-                            <div className={styles.quizFinalButtons}>
+
+                            <div className={styles.quizActionsForm}>
                               <button
-                                className={styles.quizResetButton}
-                                onClick={resetQuiz}
+                                className={styles.submitButton}
+                                onClick={sendOrderToBitrix}
                               >
-                                Пройти заново
+                                Отправить на бесплатный подбор
                               </button>
-                              <button
-                                className={styles.quizOrderButton}
-                                onClick={handleQuizOrder}
-                              >
-                                Заказать
-                              </button>
+                              <p className={styles.privacyText}>
+                                Нажимая на кнопку, вы даете согласие на
+                                обработку <a href="#">персональных данных</a>
+                              </p>
                             </div>
                           </div>
+                          {/* ------------------------------------- */}
                         </>
                       )}
                     </div>
                   </div>
                 </div>
+
                 {/* Секция "Как это работает" */}
                 {/*<HowItWorksSection />*/}
                 {/* Секция "Качество" */}
@@ -457,7 +592,7 @@ export default function App() {
 
                 {/* Блок примеров персонализации */}
                 <ExamplesGallery />
-                
+
                 {/* Секция FAQ */}
                 <div className={styles.faq}>
                   <h1 className={styles.faqTitle}>FAQ</h1>
@@ -466,8 +601,9 @@ export default function App() {
                     {faqData.map((faq, index) => (
                       <div
                         key={index}
-                        className={`${styles.faqItem} ${openFaqIndex === index ? styles.faqItemOpen : ""
-                          }`}
+                        className={`${styles.faqItem} ${
+                          openFaqIndex === index ? styles.faqItemOpen : ""
+                        }`}
                       >
                         <div
                           className={styles.faqItemHeader}
@@ -522,18 +658,6 @@ export default function App() {
                 onOpenPublicOffer={() => navigate("/public-offer")}
               />
 
-              {/*<DeliveryModal
-              isOpen={isDeliveryModalOpen}
-              onClose={() => setDeliveryModalOpen(false)}
-              onAccept={() => {
-                setDeliveryModalOpen(false);
-                if (selectedPaymentMethod === 'sbp') {
-                  setBankSelectionModalOpen(true);
-                } else {
-                  setSmsModalOpen(true);
-                }
-              }}
-            />*/}
               <BankSelectionModal
                 isOpen={isBankSelectionModalOpen}
                 onClose={() => setBankSelectionModalOpen(false)}
@@ -572,6 +696,27 @@ export default function App() {
                 }}
                 onGoHome={() => setPaymentResultModalOpen(false)}
               />
+
+              {/* --- МОДАЛЬНОЕ ОКНО УСПЕХА --- */}
+              {isSuccessModalOpen && (
+                <div className={styles.successOverlay}>
+                  <div className={styles.successModal}>
+                    <div className={styles.successIconWrapper}>
+                      <span className={styles.successIcon}>✅</span>
+                    </div>
+                    <h3 className={styles.successTitle}>Спасибо!</h3>
+                    <p className={styles.successText}>
+                      Скоро с Вами свяжется наш менеджер
+                    </p>
+                    <button
+                      className={styles.successButton}
+                      onClick={handleCloseSuccessModal}
+                    >
+                      Вернуться в магазин
+                    </button>
+                  </div>
+                </div>
+              )}
             </>
           }
         />
