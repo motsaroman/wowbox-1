@@ -1,7 +1,7 @@
 import styles from "./ImageContainerBlock.module.css";
 import sending from "../../assets/images/sending.png";
 import answer from "../../assets/images/answer.png";
-import users from "../../assets/images/users.png";
+import users from "../../assets/images/ai-icon.jpg";
 import marketplace from "../../assets/images/marketplace.png";
 import podarki from "../../assets/images/podarki.png";
 import checklist from "../../assets/images/checklist.png";
@@ -50,7 +50,7 @@ export default function ImageContainerBlock() {
               <div className={styles.imageContainerRow}>
                 <div className={styles.placeholder}>
                   <img src={users} alt="Описание 1" className={styles.image} />
-                  <p>Анализ схожих предпочтений других пользователей</p>
+                  <p>Мы свяжемся с вами для уточнения деталей</p>
                 </div>
                 <div className={styles.placeholder}>
                   <img
@@ -58,15 +58,7 @@ export default function ImageContainerBlock() {
                     alt="Описание 1"
                     className={styles.image}
                   />
-                  <p>Анализ интересов получателя на 100+ порталах</p>
-                </div>
-                <div className={styles.placeholder}>
-                  <img
-                    src={podarki}
-                    alt="Описание 1"
-                    className={styles.image}
-                  />
-                  <p>Вишлист и прошлые подарки</p>
+                  <p>Наш алгоритм проанализирует интересы получателя используя более 100 параметров</p>
                 </div>
                 <div className={styles.placeholder}>
                   <img
@@ -74,7 +66,16 @@ export default function ImageContainerBlock() {
                     alt="Описание 1"
                     className={styles.image}
                   />
-                  <p>Ваши ответы</p>
+                  <p>Показываем собранный подарок → Вы утверждаете</p>
+                </div>
+                <div className={styles.placeholder}>
+                  <img
+                    src={podarki}
+                    alt="Описание 1"
+                    className={styles.image}
+                  />
+                  <p>Если вас все устраивает, оплачиваете → Собираем и отправляем 
+Доставка 3-5 дней по РФ</p>
                 </div>
               </div>
               <img src={derevo} alt="Описание 1" className={styles.derevo} />
