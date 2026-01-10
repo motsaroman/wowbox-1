@@ -53,6 +53,7 @@ export default function App() {
   const {
     currentQuestionIndex,
     setQuizAnswer,
+    quizAnswers, // Добавили quizAnswers для доступа к ответам
     nextQuestion,
     prevQuestion: prevQuestionAction,
     resetQuiz: resetQuizAction,
@@ -85,7 +86,7 @@ export default function App() {
 
   const setOrderBoxPrice = useOrderStore((state) => state.setBoxPrice);
 
-  // --- ЛОГИКА ФОРМЫ (НОВОЕ) ---
+  // --- ЛОГИКА ФОРМЫ ---
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -94,7 +95,7 @@ export default function App() {
   });
   const [isTelegramActive, setIsTelegramActive] = useState(false);
   const [formErrors, setFormErrors] = useState({});
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false); // Состояние для модалки успеха
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -107,7 +108,6 @@ export default function App() {
   const handleTelegramToggle = () => {
     setIsTelegramActive(!isTelegramActive);
     if (isTelegramActive) {
-      // Если выключаем, очищаем поле
       setFormData((prev) => ({ ...prev, telegram: "" }));
     }
   };
@@ -144,7 +144,6 @@ export default function App() {
   };
 
   const handleQuizAnswer = (answerId) => {
-    // Отправляем цель в зависимости от номера вопроса (index + 1)
     const goalMap = {
       0: "quiz_q1_completed",
       1: "quiz_q2_completed",
@@ -164,7 +163,6 @@ export default function App() {
     prevQuestionAction();
   };
 
-  // Сброс квиза теперь также очищает форму
   const resetQuiz = () => {
     reachGoal("quiz_restart");
     setFormData({ name: "", phone: "", telegram: "", wishes: "" });
@@ -176,90 +174,85 @@ export default function App() {
   const handleSliderChange = (e) => {
     const newIndex = Number(e.target.value);
     const newPrice = priceSteps[newIndex];
-
-    // Обновляем оба стора сразу при движении
     setSelectedPrice(newPrice);
     setOrderBoxPrice(newPrice);
   };
 
   const recommendedBox = getRecommendedBox();
 
-  // --- ФУНКЦИЯ ОТПРАВКИ В БИТРИКС (ОБНОВЛЕННАЯ) ---
-  const sendOrderToBitrix = async () => {
+  // --- ОТПРАВКА В TELEGRAM ---
+  const sendOrderToTelegram = async () => {
     const errors = validateForm();
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
       return;
     }
 
-    reachGoal("buy_after_quiz"); // Цель при успешной отправке формы
+    reachGoal("buy_after_quiz");
 
-    // Формирование данных для аналитики (DataLayer)
-    if (window.dataLayer) {
-      window.dataLayer.push({
-        ecommerce: {
-          currencyCode: "RUB",
-          add: {
-            products: [
-              {
-                id: recommendedBox?.id || "custom_box",
-                name: recommendedBox?.title || "Персональный подбор",
-                price: selectedPrice,
-                brand: "WOWBOX",
-                category: "Подарочные боксы",
-                quantity: 1,
-                list: "Форма заявки квиза",
-              },
-            ],
-          },
-        },
-      });
-    }
+    const TG_BOT_TOKEN = "8253562980:AAFMXv_vj7it1rIciBYSjUWwYpygvGm-GNo";
+    const TG_CHAT_ID = "-1003450509422";
+
+    // Вспомогательная функция для получения текста ответа по индексу вопроса
+    const getAnswerText = (qIndex) => {
+      // quizAnswers может быть объектом {0: 1, 1: 2...} или массивом
+      const answerId = quizAnswers[qIndex];
+      
+      if (answerId === undefined || answerId === null) return "Не выбрано";
+      
+      const question = quizData[qIndex];
+      const option = question?.options.find((opt) => opt.id === answerId);
+      return option ? option.title : "Неизвестно";
+    };
+
+    const message = `
+<b>🔥 Новая заявка с сайта (Квиз)</b>
+
+<b>Имя:</b> ${formData.name}
+<b>Телефон:</b> ${formData.phone}
+<b>Telegram:</b> ${isTelegramActive ? formData.telegram : "@username"}
+
+<b>🎁 Для кого:</b> ${getAnswerText(0)}
+<b>🙆‍♂️ Гендер:</b> ${getAnswerText(1)}
+<b>🎁 Предпочтения:</b> ${getAnswerText(2)}
+<b>❗️ Приоритет:</b> ${getAnswerText(3)}
+<b>💰 Бюджет:</b> ${currentPrice}₽
+<b>📝 Пожелания:</b> ${formData.wishes || "Нет"}
+    `;
 
     try {
-      // Подготовка параметров для вебхука
-      const queryParams = new URLSearchParams({
-        "fields[TITLE]": `Заявка с сайта WOWBOX (Квиз)`,
-        "fields[NAME]": formData.name,
-        "fields[PHONE][0][VALUE]": formData.phone,
-        "fields[PHONE][0][VALUE_TYPE]": "WORK",
-        "fields[COMMENTS]": `
-          Бюджет: ${currentPrice}₽.
-          Предварительный бокс: ${recommendedBox.title}.
-          Telegram: ${isTelegramActive ? formData.telegram : "Не указан"}.
-          Пожелания: ${formData.wishes}
-        `,
-        "fields[OPPORTUNITY]": currentPrice,
-        "fields[SOURCE_ID]": "WEB",
+      await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chat_id: TG_CHAT_ID,
+          text: message,
+          parse_mode: "HTML",
+        }),
       });
 
-      // !!! ВАЖНО: ЗАМЕНИТЕ 'YOUR_BITRIX_WEBHOOK_URL' НА ВАШ РЕАЛЬНЫЙ URL !!!
-      await fetch(`YOUR_BITRIX_WEBHOOK_URL/crm.lead.add.json?${queryParams}`);
-
-      // ВМЕСТО ALERT ОТКРЫВАЕМ МОДАЛКУ
       setIsSuccessModalOpen(true);
     } catch (error) {
-      console.error("Ошибка отправки в Битрикс", error);
+      console.error("Ошибка отправки в Telegram", error);
       alert("Произошла ошибка при отправке заявки. Попробуйте позже.");
     }
   };
 
-  // Функция закрытия модалки успеха и сброса квиза
   const handleCloseSuccessModal = () => {
     setIsSuccessModalOpen(false);
     resetQuiz();
   };
-  // ------------------------------------------
+  // ---------------------------
 
   const toggleFaq = (index) => {
-    // Если мы открываем (а не закрываем), шлем цель
     if (openFaqIndex !== index) {
       reachGoal("faq_opened");
     }
     toggleFaqAction(index);
   };
 
-  // Эффект для DataLayer при просмотре результатов (оставляем для аналитики)
   useEffect(() => {
     if (currentQuestionIndex >= quizData.length && window.dataLayer) {
       const box = BOXES_DATA.find((b) => b.title === recommendedBox.title);
@@ -307,16 +300,15 @@ export default function App() {
               <Header />
 
               <main>
-                {/*Секция Боль и Решение*/}
                 <PainAndSolution />
                 <ImageContainerBlock />
                 <QualitySection />
-                {/* Секция выбора бокса (Карусель) */}
                 <div className={styles.selectYourOwnWowbox}>
                   <h1>Выберите свой WOWBOX</h1>
                   <BoxesCarousel />
                 </div>
                 <PartnerSwiper />
+                
                 {/* Секция Квиза */}
                 <div id="quiz" className={styles.weFoundYourSuperWowbox}>
                   <div className={styles.quizContainer}>
@@ -333,7 +325,6 @@ export default function App() {
 
                     <div className={styles.quizBox}>
                       <div className={styles.quizHeader}>
-                        {/* Индикатор прогресса (показываем только пока идут вопросы) */}
                         {currentQuestionIndex < quizData.length && (
                           <div className={styles.progressDots}>
                             {quizData.map((_, index) => (
@@ -349,7 +340,6 @@ export default function App() {
                           </div>
                         )}
 
-                        {/* Заголовок вопроса или результата */}
                         {currentQuestionIndex < quizData.length ? (
                           <>
                             <p className={styles.questionLabel}>
@@ -367,7 +357,6 @@ export default function App() {
                         )}
                       </div>
 
-                      {/* Тело Квиза */}
                       {currentQuestionIndex < quizData.length ? (
                         <>
                           <div className={styles.quizOptions}>
@@ -416,7 +405,6 @@ export default function App() {
                         </>
                       ) : (
                         <>
-                          {/* --- ЭКРАН С ФОРМОЙ И БЮДЖЕТОМ --- */}
                           <div className={styles.quizResultsForm}>
                             <div className={styles.formContainer}>
                               <div className={styles.inputGroup}>
@@ -497,7 +485,6 @@ export default function App() {
                                 />
                               </div>
 
-                              {/* Крупный блок бюджета */}
                               <div className={styles.budgetSectionLarge}>
                                 <p className={styles.budgetTitleLarge}>
                                   Ваш бюджет на подарок:
@@ -566,7 +553,7 @@ export default function App() {
                             <div className={styles.quizActionsForm}>
                               <button
                                 className={styles.submitButton}
-                                onClick={sendOrderToBitrix}
+                                onClick={sendOrderToTelegram}
                               >
                                 Отправить на бесплатный подбор
                               </button>
@@ -576,24 +563,14 @@ export default function App() {
                               </p>
                             </div>
                           </div>
-                          {/* ------------------------------------- */}
                         </>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* Секция "Как это работает" */}
-                {/*<HowItWorksSection />*/}
-                {/* Секция "Качество" */}
-
-                {/* Секция "Гарантии и доставка" */}
-                {/*<DeliverySection />*/}
-
-                {/* Блок примеров персонализации */}
                 <ExamplesGallery />
 
-                {/* Секция FAQ */}
                 <div className={styles.faq}>
                   <h1 className={styles.faqTitle}>FAQ</h1>
                   <p className={styles.faqSubtitle}>Часто задаваемые вопросы</p>
@@ -697,7 +674,6 @@ export default function App() {
                 onGoHome={() => setPaymentResultModalOpen(false)}
               />
 
-              {/* --- МОДАЛЬНОЕ ОКНО УСПЕХА --- */}
               {isSuccessModalOpen && (
                 <div className={styles.successOverlay}>
                   <div className={styles.successModal}>

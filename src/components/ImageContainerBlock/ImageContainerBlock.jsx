@@ -1,8 +1,8 @@
 import styles from "./ImageContainerBlock.module.css";
 import sending from "../../assets/images/sending.png";
 import answer from "../../assets/images/answer.png";
-import users from "../../assets/images/ai-icon.jpg";
-import marketplace from "../../assets/images/marketplace.png";
+import phone from "../../assets/images/phone.png";
+import brain from "../../assets/images/brain.jpg";
 import podarki from "../../assets/images/podarki.png";
 import checklist from "../../assets/images/checklist.png";
 import derevo from "../../assets/images/derevo2.png";
@@ -49,12 +49,12 @@ export default function ImageContainerBlock() {
               </p>
               <div className={styles.imageContainerRow}>
                 <div className={styles.placeholder}>
-                  <img src={users} alt="Описание 1" className={styles.image} />
+                  <img src={phone} alt="Описание 1" className={styles.image} />
                   <p>Мы свяжемся с вами для уточнения деталей</p>
                 </div>
                 <div className={styles.placeholder}>
                   <img
-                    src={marketplace}
+                    src={brain}
                     alt="Описание 1"
                     className={styles.image}
                   />
