@@ -58,7 +58,7 @@ export default function ImageContainerBlock() {
                     alt="Описание 1"
                     className={styles.image}
                   />
-                  <p>Наш алгоритм проанализирует интересы получателя используя более 100 параметров</p>
+                  <p>Проанализируем интересы получателя</p>
                 </div>
                 <div className={styles.placeholder}>
                   <img
@@ -74,8 +74,7 @@ export default function ImageContainerBlock() {
                     alt="Описание 1"
                     className={styles.image}
                   />
-                  <p>Если вас все устраивает, оплачиваете → Собираем и отправляем 
-Доставка 3-5 дней по РФ</p>
+                  <p>Оплачиваете если вас все устраивает</p>
                 </div>
               </div>
               <img src={derevo} alt="Описание 1" className={styles.derevo} />

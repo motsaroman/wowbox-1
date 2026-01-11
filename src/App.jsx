@@ -99,11 +99,28 @@ export default function App() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    let newValue = value;
+
+    if (name === "phone") {
+      newValue = value.replace(/[^0-9+]/g, "");
+
+      const plusCount = (newValue.match(/\+/g) || []).length;
+      if (plusCount > 1) return;
+
+      if (newValue.includes("+") && newValue[0] !== "+") return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: newValue,
+    }));
+
     if (formErrors[name]) {
       setFormErrors((prev) => ({ ...prev, [name]: false }));
     }
   };
+
 
   const handleTelegramToggle = () => {
     setIsTelegramActive(!isTelegramActive);
@@ -197,9 +214,9 @@ export default function App() {
     const getAnswerText = (qIndex) => {
       // quizAnswers может быть объектом {0: 1, 1: 2...} или массивом
       const answerId = quizAnswers[qIndex];
-      
+
       if (answerId === undefined || answerId === null) return "Не выбрано";
-      
+
       const question = quizData[qIndex];
       const option = question?.options.find((opt) => opt.id === answerId);
       return option ? option.title : "Неизвестно";
@@ -308,7 +325,7 @@ export default function App() {
                   <BoxesCarousel />
                 </div>
                 <PartnerSwiper />
-                
+
                 {/* Секция Квиза */}
                 <div id="quiz" className={styles.weFoundYourSuperWowbox}>
                   <div className={styles.quizContainer}>
@@ -417,9 +434,8 @@ export default function App() {
                                   placeholder="Введите имя..."
                                   value={formData.name}
                                   onChange={handleInputChange}
-                                  className={`${styles.formInput} ${
-                                    formErrors.name ? styles.inputError : ""
-                                  }`}
+                                  className={`${styles.formInput} ${formErrors.name ? styles.inputError : ""
+                                    }`}
                                 />
                               </div>
 
@@ -433,9 +449,8 @@ export default function App() {
                                   placeholder="+7 (000) 000-00-00"
                                   value={formData.phone}
                                   onChange={handleInputChange}
-                                  className={`${styles.formInput} ${
-                                    formErrors.phone ? styles.inputError : ""
-                                  }`}
+                                  className={`${styles.formInput} ${formErrors.phone ? styles.inputError : ""
+                                    }`}
                                 />
                               </div>
 
@@ -463,11 +478,10 @@ export default function App() {
                                     placeholder="@username"
                                     value={formData.telegram}
                                     onChange={handleInputChange}
-                                    className={`${styles.formInput} ${
-                                      formErrors.telegram
+                                    className={`${styles.formInput} ${formErrors.telegram
                                         ? styles.inputError
                                         : ""
-                                    }`}
+                                      }`}
                                   />
                                 </div>
                               )}
@@ -513,21 +527,17 @@ export default function App() {
                                           className={styles.sliderLabelWrapper}
                                         >
                                           <span
-                                            className={`${
-                                              styles.sliderLabelText
-                                            } ${
-                                              step === 5000
+                                            className={`${styles.sliderLabelText
+                                              } ${step === 5000
                                                 ? styles.popularPrice
                                                 : ""
-                                            } ${
-                                              step === 3000
+                                              } ${step === 3000
                                                 ? styles.minPrice
                                                 : ""
-                                            } ${
-                                              idx === priceIndex
+                                              } ${idx === priceIndex
                                                 ? styles.activeLabel
                                                 : ""
-                                            }`}
+                                              }`}
                                             style={{
                                               opacity: isVisible ? 1 : 0,
                                             }}
@@ -578,9 +588,8 @@ export default function App() {
                     {faqData.map((faq, index) => (
                       <div
                         key={index}
-                        className={`${styles.faqItem} ${
-                          openFaqIndex === index ? styles.faqItemOpen : ""
-                        }`}
+                        className={`${styles.faqItem} ${openFaqIndex === index ? styles.faqItemOpen : ""
+                          }`}
                       >
                         <div
                           className={styles.faqItemHeader}
