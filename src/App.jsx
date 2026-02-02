@@ -1,5 +1,3 @@
-// src\App.jsx
-
 import { useState, useEffect } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import { useBoxStore, BOXES_DATA } from "./store/boxStore";
@@ -53,7 +51,7 @@ export default function App() {
   const {
     currentQuestionIndex,
     setQuizAnswer,
-    quizAnswers, // Добавили quizAnswers для доступа к ответам
+    quizAnswers,
     nextQuestion,
     prevQuestion: prevQuestionAction,
     resetQuiz: resetQuizAction,
@@ -68,8 +66,6 @@ export default function App() {
   const {
     openFaqIndex,
     toggleFaq: toggleFaqAction,
-
-    // Состояния для модальных окон
     isDeliveryModalOpen,
     setDeliveryModalOpen,
     isSmsModalOpen,
@@ -86,7 +82,6 @@ export default function App() {
 
   const setOrderBoxPrice = useOrderStore((state) => state.setBoxPrice);
 
-  // --- ЛОГИКА ФОРМЫ ---
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -99,28 +94,21 @@ export default function App() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-
     let newValue = value;
-
     if (name === "phone") {
       newValue = value.replace(/[^0-9+]/g, "");
-
       const plusCount = (newValue.match(/\+/g) || []).length;
       if (plusCount > 1) return;
-
       if (newValue.includes("+") && newValue[0] !== "+") return;
     }
-
     setFormData((prev) => ({
       ...prev,
       [name]: newValue,
     }));
-
     if (formErrors[name]) {
       setFormErrors((prev) => ({ ...prev, [name]: false }));
     }
   };
-
 
   const handleTelegramToggle = () => {
     setIsTelegramActive(!isTelegramActive);
@@ -136,25 +124,23 @@ export default function App() {
     if (isTelegramActive && !formData.telegram.trim()) errors.telegram = true;
     return errors;
   };
-  // ---------------------------
 
   useEffect(() => {
     fetchPricing();
   }, [fetchPricing]);
 
-  const foundIndex = priceSteps.indexOf(selectedPrice);
-  const priceIndex = foundIndex !== -1 ? foundIndex : 1;
-
-  // 3. Расчеты для отображения
-  const currentPrice = priceSteps[priceIndex] || 5000;
+  // --- ИЗМЕНЕНИЯ ТУТ: Фиксируем цену 3500 ---
+  const priceIndex = 0; // Индекс больше не важен для логики
+  const currentPrice = 3500; // Статичная цена
   const maxTotalValue = currentPrice + 3000;
   const savings = Math.round(currentPrice * 0.4);
   const max = Math.max(0, priceSteps.length - 1);
-  const percentage = (priceIndex / max) * 100;
+  const percentage = 0; // Слайдер скрыт, процент не важен
 
   const sliderStyle = {
     background: `linear-gradient(to right, #93d3e1 0%, #93d3e1 ${percentage}%, #e2e1df ${percentage}%, #e2e1df 100%)`,
   };
+
   const scrollToQuiz = () => {
     const element = document.querySelector(`.${styles.weFoundYourSuperWowbox}`);
     if (element) element.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -170,7 +156,6 @@ export default function App() {
     if (goalMap[currentQuestionIndex]) {
       reachGoal(goalMap[currentQuestionIndex]);
     }
-
     setQuizAnswer(currentQuestionIndex, answerId);
     setTimeout(nextQuestion, 300);
   };
@@ -189,15 +174,15 @@ export default function App() {
   };
 
   const handleSliderChange = (e) => {
-    const newIndex = Number(e.target.value);
-    const newPrice = priceSteps[newIndex];
-    setSelectedPrice(newPrice);
-    setOrderBoxPrice(newPrice);
+    // Выбор цены через слайдер отключен
+    // const newIndex = Number(e.target.value);
+    // const newPrice = priceSteps[newIndex];
+    // setSelectedPrice(newPrice);
+    // setOrderBoxPrice(newPrice);
   };
 
   const recommendedBox = getRecommendedBox();
 
-  // --- ОТПРАВКА В TELEGRAM ---
   const sendOrderToTelegram = async () => {
     const errors = validateForm();
     if (Object.keys(errors).length > 0) {
@@ -210,13 +195,9 @@ export default function App() {
     const TG_BOT_TOKEN = "8253562980:AAFMXv_vj7it1rIciBYSjUWwYpygvGm-GNo";
     const TG_CHAT_ID = "-1003450509422";
 
-    // Вспомогательная функция для получения текста ответа по индексу вопроса
     const getAnswerText = (qIndex) => {
-      // quizAnswers может быть объектом {0: 1, 1: 2...} или массивом
       const answerId = quizAnswers[qIndex];
-
       if (answerId === undefined || answerId === null) return "Не выбрано";
-
       const question = quizData[qIndex];
       const option = question?.options.find((opt) => opt.id === answerId);
       return option ? option.title : "Неизвестно";
@@ -249,7 +230,6 @@ export default function App() {
           parse_mode: "HTML",
         }),
       });
-
       setIsSuccessModalOpen(true);
     } catch (error) {
       console.error("Ошибка отправки в Telegram", error);
@@ -261,7 +241,6 @@ export default function App() {
     setIsSuccessModalOpen(false);
     resetQuiz();
   };
-  // ---------------------------
 
   const toggleFaq = (index) => {
     if (openFaqIndex !== index) {
@@ -282,7 +261,7 @@ export default function App() {
                 {
                   id: box.id,
                   name: box.title,
-                  price: selectedPrice,
+                  price: currentPrice, // Используем статичную цену
                   brand: "WOWBOX",
                   category: "Подарочные боксы",
                   list: "Результаты квиза",
@@ -293,7 +272,7 @@ export default function App() {
         });
       }
     }
-  }, [currentQuestionIndex, selectedPrice]);
+  }, [currentQuestionIndex, currentPrice]);
 
   return (
     <>
@@ -326,7 +305,6 @@ export default function App() {
                 </div>
                 <PartnerSwiper />
 
-                {/* Секция Квиза */}
                 <div id="quiz" className={styles.weFoundYourSuperWowbox}>
                   <div className={styles.quizContainer}>
                     <h2>
@@ -499,7 +477,8 @@ export default function App() {
                                 />
                               </div>
 
-                              <div className={styles.budgetSectionLarge}>
+                              {/* БЛОК ВЫБОРА БЮДЖЕТА ЗАКОММЕНТИРОВАН */}
+                              {/* <div className={styles.budgetSectionLarge}>
                                 <p className={styles.budgetTitleLarge}>
                                   Ваш бюджет на подарок:
                                 </p>
@@ -549,15 +528,16 @@ export default function App() {
                                     })}
                                   </div>
                                 </div>
+                               */}
 
-                                <div className={styles.budgetInfoResultSmall}>
+                                {/*<div className={styles.budgetInfoResultSmall}>
                                   <p>
                                     Внутри бокса за {currentPrice}₽: Суммарная
                                     стоимость ~{currentPrice}-{maxTotalValue}₽.
                                     Вы экономите ~{savings}₽
                                   </p>
                                 </div>
-                              </div>
+                               </div> */}
                             </div>
 
                             <div className={styles.quizActionsForm}>
@@ -634,7 +614,6 @@ export default function App() {
               <Footer />
               <BoxingPersonalization />
 
-              {/* Глобальные модальные окна (управляемые через Store) */}
               <OrderModal
                 onPayment={(paymentMethod) => {
                   setSelectedPaymentMethod(paymentMethod);

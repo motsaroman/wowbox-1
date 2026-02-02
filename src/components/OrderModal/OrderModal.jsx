@@ -357,12 +357,12 @@ export default function OrderModal({
 
   const getThemeDisplayName = (theme) => {
     const themeMap = {
-      techno: "ТЕХНО",
-      cozy: "УЮТНЫЙ",
-      party: "ПАТИ",
-      sweet: "СЛАДКИЙ",
+      techno: "СЛАДКИЙ БОКС",
+      //cozy: "БОКС ДЛЯ ЛЮБИМЫХ",
+      party: "БОКС ДЛЯ ЛЮБИМЫХ",
+     // sweet: "СЛАДКИЙ",
     };
-    return themeMap[theme] || theme?.toUpperCase() || "ТЕХНО";
+    return themeMap[theme] || theme?.toUpperCase() || "СЛАДКИЙ БОКС";
   };
 
   const getThemeLogo = (theme) => {

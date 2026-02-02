@@ -2,8 +2,8 @@ import { create } from 'zustand';
 import { useOrderStore } from './orderStore';
 // Статические данные боксов (чтобы они были доступны в сторе для логики рекомендаций)
 // Можно вынести в отдельный файл src/data/boxes.js, но пока оставим здесь или импортируем, если они есть отдельно.
-import selectYourOwnWowboxCardImg1 from "../assets/images/selectYourOwnWowboxCardImg1.webp";
-import selectYourOwnWowboxCardImg2 from "../assets/images/selectYourOwnWowboxCardImg2.webp";
+import selectYourOwnWowboxCardImg1 from "../assets/images/korob1.png";
+import selectYourOwnWowboxCardImg2 from "../assets/images/korob2.png";
 import selectYourOwnWowboxCardImg3 from "../assets/images/selectYourOwnWowboxCardImg3.webp";
 import selectYourOwnWowboxCardImg4 from "../assets/images/selectYourOwnWowboxCardImg4.webp";
 
@@ -11,12 +11,12 @@ export const BOXES_DATA = [
   {
     id: "techno",
     image: selectYourOwnWowboxCardImg1,
-    title: "ТЕХНО БОКС",
-    price: "4900₽",
-    priceValue: 4900,
-    description: "Для тех, кто любит современные гаджеты и полезные устройства. Внутри — практичные технологичные штуки, которые облегчают жизнь и реально радуют каждый день",
+    title: "СЛАДКИЙ БОКС",
+    price: "3500₽",
+    priceValue: 3500,
+    description: "Премиальный сладкий подарок в стильной подарочной упаковке",
     details: {
-      items: ["Фирменная теника", "Полезные гаджеты"],
+      items: ["Стеклянная чашка", "Черный фруктовый чай", "Конфеты ручной работы", "Соленная карамель", "Клюквенный джем с грецким орехом", "Клюква в сахарной пудре", "Бельгийские апельсины в шоколаде", "Леденцы радуга", "Маршмеллоу"],
       total: "9-12 товаров",
       value: "от 4,900₽ до 120,000₽",
     },
@@ -24,17 +24,17 @@ export const BOXES_DATA = [
   {
     id: "cozy",
     image: selectYourOwnWowboxCardImg2,
-    title: "УЮТНЫЙ БОКС",
-    price: "4900₽",
-    priceValue: 4900,
-    description: "Идеален для тех, кто ценит тепло, комфорт и атмосферу «домашнего блаженства». Пледы, свечи, вкусный чай — всё, чтобы замедлиться и насладиться моментом",
+    title: "БОКС ДЛЯ ЛЮБИМЫХ",
+    price: "3500₽",
+    priceValue: 3500,
+    description: "Подарок любимым на любой повод в стильной подарочной упаковке",
     details: {
-      items: ["Предметы для атмосферы", "Элементы домашнего декора", "Сертификаты в СПА и массажи"],
+      items: ["Керамическая чашка", "Черный фруктовый чай", "Конфеты ручной работы", "Шоколадное сердце с драже", "Клюква в сахарной пудре", "Бельгийские апельсины в шоколаде", "Леденцы с конфетти", "Конфеты Love is..."],
       total: "9-12 товаров",
       value: "от 4,900₽ до 120,000₽",
     },
   },
-  {
+ /* {
     id: "party",
     image: selectYourOwnWowboxCardImg3,
     title: "ПАТИ БОКС",
@@ -59,7 +59,7 @@ export const BOXES_DATA = [
       total: "9-12 товаров",
       value: "от 4,900₽ до 120,000₽",
     },
-  },
+  },*/
 ];
 
 // Функция для маппинга ID квиза в нужные строковые значения

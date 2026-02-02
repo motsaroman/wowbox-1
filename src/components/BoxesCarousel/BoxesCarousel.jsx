@@ -19,8 +19,6 @@ export default function BoxesCarousel() {
   const [displayedCard, setDisplayedCard] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // const [priceIndex, setPriceIndex] = useState(1);
-
   const selectTheme = useBoxStore((state) => state.selectTheme);
   const setSelectedPrice = useBoxStore((state) => state.setSelectedPrice);
   const openPersonalization = useBoxStore((state) => state.openPersonalization);
@@ -44,7 +42,7 @@ export default function BoxesCarousel() {
       const products = BOXES_DATA.map((box, index) => ({
         id: box.id,
         name: box.title,
-        price: selectedPrice, // Используем текущую выбранную цену или базовую
+        price: 3500, // Фиксированная цена для аналитики
         brand: "WOWBOX",
         category: "Подарочные боксы",
         list: "Главная страница - Карусель",
@@ -60,26 +58,21 @@ export default function BoxesCarousel() {
     }
   }, []);
 
-  // --- СИНХРОНИЗАЦИЯ ---
-  // Вычисляем индекс на основе глобальной цены
-  const foundIndex = priceSteps.indexOf(selectedPrice);
-  const priceIndex = foundIndex !== -1 ? foundIndex : 1;
-
-  const currentPrice = priceSteps[priceIndex] || 5000;
+  // --- СИНХРОНИЗАЦИЯ (ФИКСИРОВАННАЯ ЦЕНА 3500) ---
+  const currentPrice = 3500; 
   const maxTotalValue = currentPrice + 3000;
   const savings = Math.round(currentPrice * 0.4);
+  const priceIndex = 0; // Для расчетов не используется, так как слайдер скрыт
 
-  // Обработчик движения ползунка
+  // Обработчик движения ползунка (отключен)
   const handleSliderChange = (e) => {
-    const newIndex = Number(e.target.value);
-    const newPrice = priceSteps[newIndex];
-
-    setSelectedPrice(newPrice); // Обновляем глобальный стор
-    setOrderBoxPrice(newPrice); // Синхронизируем с заказом
+    // const newIndex = Number(e.target.value);
+    // const newPrice = priceSteps[newIndex];
+    // setSelectedPrice(newPrice);
+    // setOrderBoxPrice(newPrice);
   };
 
   const handleOrderClick = (themeId) => {
-    // Цель: Клик "Купить" после выбора бокса
     reachGoal("buy_after_selection");
     const box = BOXES_DATA.find((b) => b.id === themeId);
     if (window.dataLayer && box) {
@@ -101,6 +94,10 @@ export default function BoxesCarousel() {
         },
       });
     }
+    // При заказе всегда устанавливаем 3500
+    setSelectedPrice(3500);
+    setOrderBoxPrice(3500);
+    
     selectTheme(themeId);
     openPersonalization();
   };
@@ -151,11 +148,12 @@ export default function BoxesCarousel() {
   const currentCard = carouselData[displayedCard];
 
   const max = Math.max(0, priceSteps.length - 1);
-  const percentage = (priceIndex / max) * 100;
+  const percentage = 0; // Фиксировано
 
   const sliderStyle = {
     background: `linear-gradient(to right, #93d3e1 0%, #93d3e1 ${percentage}%, #e2e1df ${percentage}%, #e2e1df 100%)`,
   };
+
   return (
     <div className={styles.boxesCarousel}>
       <div className={styles.boxesCarouselImagesWrapper}>
@@ -205,9 +203,11 @@ export default function BoxesCarousel() {
             <p>{currentCard.title}</p>
 
             <div className={styles.budgetSection}>
-              <p className={styles.budgetTitle}>Ваш бюджет на подарок:</p>
+              <p className={styles.budgetTitle}>Цена бокса:</p>
               <p className={styles.budgetTitle}>{currentPrice}₽</p>
-              <div className={styles.sliderContainer}>
+              
+              {/* СЕКЦИЯ СЛАЙДЕРА ЗАКОММЕНТИРОВАНА */}
+              {/* <div className={styles.sliderContainer}>
                 <input
                   type="range"
                   min="0"
@@ -242,7 +242,8 @@ export default function BoxesCarousel() {
                     );
                   })}
                 </div>
-              </div>
+              </div> 
+              */}
             </div>
           </div>
           <div className={styles.boxesCarouselCardBody}>
@@ -269,7 +270,7 @@ export default function BoxesCarousel() {
                     />
                   ))}
                 </div>
-                <div className={styles.budgetInfoResult}>
+                {/*<div className={styles.budgetInfoResult}>
                   <p className={styles.infoTitle}>
                     Внутри бокса за {currentPrice}₽
                   </p>
@@ -283,7 +284,7 @@ export default function BoxesCarousel() {
                       <br /> на персональном подборе
                     </li>
                   </ul>
-                </div>
+                </div>*/}
                 <p onClick={toggleExpanded} className={styles.closeButton}>
                   <img src={close} alt="Close" />
                 </p>

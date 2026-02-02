@@ -38,7 +38,7 @@
 
 .centerImage {
   width: 39.9rem;
-  height: 34.2rem;
+  height: 48.2rem;
   filter: blur(0);
   opacity: 1;
   transform: scale(1);
@@ -96,7 +96,7 @@
   align-items: flex-start;
   gap: 2rem;
   position: relative;
-  z-index: 1;
+  z-index: 4;
 }
 
 .boxesCarouselCard {

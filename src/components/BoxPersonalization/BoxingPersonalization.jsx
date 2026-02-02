@@ -289,7 +289,7 @@ const BoxPersonalization = () => {
                 alt="Theme 1"
                 loading="lazy"
               />
-              <div className={styles.themeLabel}>ТЕХНО</div>
+              <div className={styles.themeLabel}>СЛАДКИЙ БОКС</div>
             </div>
             <div
               className={`${styles.themeCard} ${
@@ -300,12 +300,12 @@ const BoxPersonalization = () => {
               <img
                 src={texno2}
                 className={styles.themeIcon}
-                alt="Theme 3"
+                alt="Theme 2"
                 loading="lazy"
               />
-              <div className={styles.themeLabel}>ПАТИ</div>
+              <div className={styles.themeLabel}>БОКС ДЛЯ ЛЮБИМЫХ</div>
             </div>
-            <div
+           {/* <div
               className={`${styles.themeCard} ${
                 selectedTheme === "sweet" ? styles.themeCardActive : ""
               }`}
@@ -318,8 +318,8 @@ const BoxPersonalization = () => {
                 loading="lazy"
               />
               <div className={styles.themeLabel}>СЛАДКИЙ</div>
-            </div>
-            <div
+            </div>*/}
+            {/*<div
               className={`${styles.themeCard} ${
                 selectedTheme === "cozy" ? styles.themeCardActive : ""
               }`}
@@ -332,7 +332,7 @@ const BoxPersonalization = () => {
                 loading="lazy"
               />
               <div className={styles.themeLabel}>УЮТНЫЙ</div>
-            </div>
+            </div>*/}
           </div>
         </div>
 
